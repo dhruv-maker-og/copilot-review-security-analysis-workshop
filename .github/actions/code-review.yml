@@ -92,12 +92,16 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Write Review Report
+        run: |
+          mkdir -p reports
+          cat << 'EOF' > reports/code-review-report.md
+          ${{ needs.code-review.outputs.copilot_output }}
+          EOF
 
       - name: Upload Review Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: code-review-report
-          path: samples/findings/
+          path: reports/
           retention-days: 30
