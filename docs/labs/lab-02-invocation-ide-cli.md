@@ -1,13 +1,13 @@
-# Lab 2: Invocation from IDE & Copilot CLI
+# Lab 2: Copilot CLI & GitHub Actions Workflows
 
-> **Time estimate:** 60 minutes
+> **Time estimate:** 45 minutes
 > **Instructor note:** Show the CLI commands live before participants try. The workflow YAML files are already in the repo — participants review and trigger them.
 
 ---
 
 ## Objective
 
-Invoke the custom code review and security analysis agents from the **VS Code IDE** and from the **Copilot CLI** on the command line. Set up **GitHub Actions workflows** that run these agents automatically on pull requests.
+Invoke the Copilot CLI on the command line and set up **GitHub Actions workflows** that run the code review and security analysis agents automatically on pull requests.
 
 ## Prerequisites
 
@@ -17,51 +17,9 @@ Invoke the custom code review and security analysis agents from the **VS Code ID
 
 ---
 
-## Part A: IDE Invocation (15 min)
+## Part A: Copilot CLI Invocation (20 min) — *Optional*
 
-### Step 1: Invoke the Agent from Copilot Chat
-
-1. Open the **Copilot Chat** panel in VS Code (`Ctrl+Shift+I` / `Cmd+Shift+I`)
-2. Select the `code-review` agent by typing `@code-review`
-3. Enter this prompt:
-
-```
-@code-review Perform a full code review and security analysis of the sample-app directory. 
-Review both server.js and utils.js. Provide findings in a table sorted by severity.
-```
-
-4. Wait for the response. The agent should produce a structured report.
-
-### Step 2: Review the Output
-
-Look for:
-- A summary table with finding counts by severity
-- Detailed findings with file names and line numbers
-- Code fix suggestions for each finding
-- Both code quality and security findings
-
-### Step 3: Use the Agent with a Specific File
-
-Try reviewing a single file with focused instructions:
-
-```
-@code-review Focus only on security vulnerabilities in sample-app/server.js. 
-For each finding, include the CWE identifier and a proof of concept.
-```
-
-### ✅ Checkpoint A
-
-| Check | Expected |
-|-------|----------|
-| Agent responds | Structured findings returned in Chat |
-| Mixed findings | Both code quality and security issues identified |
-| File-specific review | Single-file review produces focused output |
-
----
-
-## Part B: Copilot CLI Invocation (20 min)
-
-### Step 4: Explain Code with Copilot CLI
+### Step 1: Explain Code with Copilot CLI
 
 Use `gh copilot explain` to understand code:
 
@@ -71,7 +29,7 @@ gh copilot explain "What does the /api/users/search endpoint in sample-app/serve
 
 **Expected output:** Copilot explains the endpoint's functionality and identifies the SQL injection vulnerability.
 
-### Step 5: Suggest a Command for Security Scanning
+### Step 2: Suggest a Command for Security Scanning
 
 ```bash
 gh copilot suggest "Run a grep command to find all uses of eval() in the sample-app directory"
@@ -95,7 +53,7 @@ grep -rn "eval(" sample-app/
 sample-app/server.js:73:    const result = eval(expression);
 ```
 
-### Step 6: Suggest a Fix
+### Step 3: Suggest a Fix
 
 ```bash
 gh copilot explain "How should I fix the SQL injection vulnerability at line 55 of sample-app/server.js where it uses string interpolation in a SQL query?"
@@ -103,7 +61,7 @@ gh copilot explain "How should I fix the SQL injection vulnerability at line 55 
 
 **Expected output:** Copilot explains parameterized queries and suggests using `db.prepare("SELECT ... WHERE username = ?").all(username)`.
 
-### Step 7: Run the Full Agent via CLI (if available)
+### Step 4: Run the Full Agent via CLI (if available)
 
 > **NOTE:** The exact CLI syntax for running full agents may vary based on your Copilot CLI version. Check `gh copilot --help` for available commands.
 
@@ -112,7 +70,7 @@ gh copilot explain "How should I fix the SQL injection vulnerability at line 55 
 gh copilot suggest "Write a shell command that scans sample-app/ for hardcoded passwords, API keys, and uses of eval()"
 ```
 
-### ✅ Checkpoint B
+### ✅ Checkpoint A
 
 | Check | Expected |
 |-------|----------|
@@ -122,27 +80,53 @@ gh copilot suggest "Write a shell command that scans sample-app/ for hardcoded p
 
 ---
 
-## Part C: GitHub Actions Workflows (25 min)
+## Part B: GitHub Actions Workflows (25 min)
 
-The workshop repository includes two GitHub Actions workflows that automate code review and security analysis on pull requests.
+The workshop repository uses a **reusable workflow** architecture. The Copilot CLI engine lives in `.github/workflows/copilot-cli-action.yml`, while the caller workflow templates live in `.github/actions/`. To activate them, copy the caller workflows into `.github/workflows/`.
 
-### Step 8: Review the Workflow Files
+#### Copy the caller workflows into `.github/workflows/`
 
-Open and examine the two workflow files:
+```bash
+cp .github/actions/code-review.yml .github/workflows/code-review.yml
+cp .github/actions/security-analysis.yml .github/workflows/security-analysis.yml
+```
 
-**`.github/workflows/code-review.yml`**
-- Triggers on: `pull_request` to `main` or `develop`
+Or on Windows (PowerShell):
+
+```powershell
+Copy-Item .github\actions\code-review.yml .github\workflows\code-review.yml
+Copy-Item .github\actions\security-analysis.yml .github\workflows\security-analysis.yml
+```
+
+> **Why this pattern?** The reusable workflow `copilot-cli-action.yml` contains all the Copilot CLI installation and execution logic. The caller workflows in `.github/actions/` are templates that define **what** to analyze (prompts, triggers, permissions). By copying them to `.github/workflows/`, you activate them — and you can customize the prompts without touching the underlying mechanics.
+
+### Step 5: Review the Workflow Files
+
+The workshop repository uses a **reusable workflow** pattern (inspired by [neildcruz/copilot-cli-automation-accelerator](https://github.com/neildcruz/copilot-cli-automation-accelerator)) that separates the Copilot CLI mechanics from the review configuration. There are three workflow files:
+
+**`.github/workflows/copilot-cli-action.yml`** — Reusable workflow (the engine)
+- Triggered via `workflow_call` by other workflows (or manually via `workflow_dispatch`)
+- Encapsulates all Copilot CLI installation and execution logic
+- Accepts inputs: `agent`, `user_prompt`, `node_version`, `install_dependencies`, `timeout_minutes`
+- Returns output: `copilot_output` (captured stdout from the Copilot CLI run)
+- Steps: Checkout → Setup Node.js → Install deps → Install Copilot CLI → Run prompt → Capture output
+
+**`.github/actions/code-review.yml`** → copy to **`.github/workflows/code-review.yml`**
+- Triggers on: `pull_request` to `main` or `develop`, manual dispatch with optional `custom_prompt`
 - Permissions: `contents: read`, `pull-requests: write`
-- Steps: Checkout → Setup Node.js → Install deps → Install Copilot CLI → Run Review → Upload artifacts
-- Output: Results posted to GitHub Step Summary
+- Delegates to `copilot-cli-action.yml` with `agent: code-review` and the review prompt
+- Downstream jobs: Display results in step summary, upload artifacts
+- Clean and easy to customize — change the prompt without touching the underlying mechanics
 
-**`.github/workflows/security-analysis.yml`**
-- Triggers on: `push` to `main`, `pull_request` to `main`, weekly schedule (Sunday midnight), manual dispatch
+**`.github/actions/security-analysis.yml`** → copy to **`.github/workflows/security-analysis.yml`**
+- Triggers on: `push` to `main`, `pull_request` to `main`, weekly schedule (Sunday midnight), manual dispatch with `scan_depth`
 - Permissions: `contents: read`
-- Steps: Checkout → Setup Node.js → Install deps → Install Copilot CLI → Run Security Scan → Check for Critical → Upload artifacts
-- Extra: Checks for critical findings patterns and adds a warning annotation
+- Delegates to `copilot-cli-action.yml` with `agent: security-analysis` and the security prompt
+- Downstream jobs: Display results, check for critical patterns (`eval()`, SQL injection, hardcoded secrets), upload artifacts
 
-### Step 9: Push the Repository to GitHub
+> **Key pattern:** The caller workflows use `uses: ./.github/workflows/copilot-cli-action.yml` with `secrets: inherit` to invoke the reusable workflow. This keeps each workflow focused on its purpose: **what** to analyze (caller) vs. **how** to run the CLI (reusable workflow). The templates live in `.github/actions/` — copy them to `.github/workflows/` to activate them.
+
+### Step 6: Push the Repository to GitHub
 
 If you haven't already, push your repository:
 
@@ -154,7 +138,7 @@ git remote add origin https://github.com/<your-username>/copilot-review-security
 git push -u origin main
 ```
 
-### Step 10: Create a Test Branch and PR
+### Step 7: Create a Test Branch and PR
 
 Create a branch with a small change to trigger the workflows:
 
@@ -184,7 +168,7 @@ gh pr create --title "Test: Code Review & Security Analysis" \
   --base main
 ```
 
-### Step 11: Monitor Workflow Execution
+### Step 8: Monitor Workflow Execution
 
 1. Go to your repository on GitHub
 2. Navigate to the **Actions** tab
@@ -193,7 +177,7 @@ gh pr create --title "Test: Code Review & Security Analysis" \
    - **AI Security Analysis** (triggered by the PR)
 4. Click into each workflow run to see the step summary
 
-### Step 12: Review Workflow Output
+### Step 9: Review Workflow Output
 
 After workflows complete:
 
@@ -202,7 +186,7 @@ After workflows complete:
 3. Check the **Artifacts** section — download the report files
 4. On the PR page, look for any annotations or warnings
 
-### Step 13: Trigger a Manual Workflow Run
+### Step 10: Trigger a Manual Workflow Run
 
 You can also trigger the security analysis manually:
 
@@ -216,7 +200,7 @@ Or from the GitHub UI:
 3. Select scan depth: **comprehensive**
 4. Click **Run workflow**
 
-### ✅ Checkpoint C
+### ✅ Checkpoint B
 
 | Check | Expected |
 |-------|----------|

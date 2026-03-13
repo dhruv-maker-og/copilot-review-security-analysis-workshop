@@ -100,13 +100,13 @@ By the end of this workshop, you will be able to:
 │       ├── code-review-example-output.md       # Expected code review output
 │       └── security-analysis-example-output.md # Expected security analysis output
 │
-├── agents/
+├── templates/                         # Reference templates (NOT consumed by Copilot directly)
 │   ├── instructions/
-│   │   ├── code-review.md             # Custom instructions: code review persona
-│   │   └── security-review.md         # Custom instructions: security review persona
+│   │   ├── code-review.md             # Template: code review instruction criteria
+│   │   └── security-review.md         # Template: security review instruction criteria
 │   └── skills/
-│       ├── skill-code-review.md       # Skill definition for code review
-│       └── skill-security-analysis.md # Skill definition for security analysis
+│       ├── skill-code-review.md       # Template: code review skill definition
+│       └── skill-security-analysis.md # Template: security analysis skill definition
 │
 ├── automation/
 │   ├── copilot-sdk-runner.sh          # Bash runner: --usecase <name> --lang <lang>
