@@ -53,19 +53,19 @@ function calculateDiscount(items, rate, applyTax, currency, coupon, precision) {
     total = total + items[i].score;
   }
   if (total > 100) {
-    total = total * 0.9;      // Magic number
+    total = total * 0.9; // Magic number
   }
   if (total > 500) {
-    total = total * 0.85;     // Another magic number
+    total = total * 0.85; // Another magic number
   }
   if (applyTax) {
-    total = total * 1.0825;   // Tax rate magic number
+    total = total * 1.0825; // Tax rate magic number
   }
   if (coupon === "SAVE20") {
-    total = total * 0.8;      // Hardcoded coupon
+    total = total * 0.8; // Hardcoded coupon
   }
   if (coupon === "HALF") {
-    total = total * 0.5;      // Another hardcoded coupon
+    total = total * 0.5; // Another hardcoded coupon
   }
   total = Math.round(total * Math.pow(10, precision)) / Math.pow(10, precision);
   return { total: total, currency: currency || "USD", discount: rate };
@@ -133,7 +133,9 @@ function fetchAndProcess(url, callback) {
   setTimeout(function () {
     var data = { items: [1, 2, 3] };
     setTimeout(function () {
-      var processed = data.items.map(function (x) { return x * 2; });
+      var processed = data.items.map(function (x) {
+        return x * 2;
+      });
       setTimeout(function () {
         var formatted = processed.join(",");
         setTimeout(function () {

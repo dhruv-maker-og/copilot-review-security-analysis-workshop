@@ -83,11 +83,14 @@ app.post("/api/users/register", (req, res) => {
   const { username, email, password } = req.body;
 
   // BAD: MD5 is not suitable for password hashing
-  const hashedPassword = crypto.createHash("md5").update(password).digest("hex");
+  const hashedPassword = crypto
+    .createHash("md5")
+    .update(password)
+    .digest("hex");
 
   try {
     const stmt = db.prepare(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)"
+      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
     );
     stmt.run(username, email, hashedPassword);
     res.status(201).json({ message: "User created", username });

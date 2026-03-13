@@ -1,0 +1,142 @@
+# =============================================================
+# Example Workflow: AI Security Analysis with Copilot CLI
+# =============================================================
+# Performs AI-powered security analysis on pull requests
+# and on a weekly schedule using the reusable Copilot CLI
+# Automation workflow.
+#
+# The actual Copilot CLI installation and execution logic lives
+# in the reusable workflow copilot-cli-action.yml. This keeps
+# the security analysis configuration clean and easy to
+# customize without touching the underlying mechanics.
+#
+# Copy this file to .github/workflows/ in your repository to use it.
+#
+# Inspired by: neildcruz/copilot-cli-automation-accelerator
+# =============================================================
+
+name: AI Security Analysis
+
+on:
+  push:
+    branches: [main]
+
+  pull_request:
+    branches: [main]
+
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight UTC
+
+  workflow_dispatch:
+    inputs:
+      scan_depth:
+        description: 'Depth of security scan'
+        required: true
+        type: choice
+        options:
+          - quick
+          - standard
+          - comprehensive
+        default: 'standard'
+
+permissions:
+  contents: read
+
+jobs:
+  # -----------------------------------------------------------------
+  # Job 1: Delegate to the reusable Copilot CLI workflow
+  # -----------------------------------------------------------------
+  security-analysis:
+    name: AI Security Analysis
+    uses: ./.github/workflows/copilot-cli-action.yml
+    with:
+      agent: security-analysis
+      timeout_minutes: 45
+      user_prompt: |
+        Perform a ${{ github.event.inputs.scan_depth || 'standard' }} security analysis of this codebase.
+
+        Scan for:
+        1. OWASP Top 10 vulnerabilities
+        2. Hardcoded secrets or credentials
+        3. Insecure dependencies
+        4. Authentication/authorization issues
+        5. Data validation problems
+        6. Insecure cryptographic implementations
+        7. Logging and monitoring gaps
+        8. API security issues
+
+        Generate a security report with:
+        - Executive summary
+        - Detailed findings with severity ratings (CRITICAL, HIGH, MEDIUM, LOW)
+        - CWE identifiers for each finding
+        - Remediation recommendations
+        - Priority order for fixes
+    secrets: inherit
+
+  # -----------------------------------------------------------------
+  # Job 2: Display results in the workflow step summary
+  # -----------------------------------------------------------------
+  display-results:
+    name: Display Security Results
+    needs: security-analysis
+    if: always() && needs.security-analysis.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Display Security Analysis Results
+        run: |
+          echo "## 🔒 AI Security Analysis Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.head_ref || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Depth:** ${{ github.event.inputs.scan_depth || 'standard' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Analyst:** GitHub Copilot Security Analysis Agent" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Findings" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.security-analysis.outputs.copilot_output }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Analysis completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")*" >> $GITHUB_STEP_SUMMARY
+
+  # -----------------------------------------------------------------
+  # Job 3: Check for critical security patterns
+  # -----------------------------------------------------------------
+  check-critical-findings:
+    name: Check for Critical Findings
+    needs: security-analysis
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Scan for Critical Patterns
+        run: |
+          echo "Checking for critical security findings..."
+
+          EVAL_COUNT=$(grep -rn "eval(" sample-app/ 2>/dev/null | wc -l || echo "0")
+          SQL_INJECT=$(grep -rn 'SELECT.*\${' sample-app/ 2>/dev/null | wc -l || echo "0")
+          HARDCODED=$(grep -rn 'API_KEY\|DB_PASSWORD\|secret' sample-app/ 2>/dev/null | grep -v 'test/' | grep -v '.env' | wc -l || echo "0")
+
+          echo "  eval() usage: $EVAL_COUNT"
+          echo "  SQL injection patterns: $SQL_INJECT"
+          echo "  Hardcoded secrets: $HARDCODED"
+
+          TOTAL=$((EVAL_COUNT + SQL_INJECT + HARDCODED))
+
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "::warning::⚠️ $TOTAL critical security pattern(s) detected. Review the security report."
+          else
+            echo "✅ No critical patterns detected."
+          fi
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-analysis-report
+          path: samples/findings/
+          retention-days: 30

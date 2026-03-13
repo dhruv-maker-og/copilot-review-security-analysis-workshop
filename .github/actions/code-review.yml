@@ -1,0 +1,103 @@
+# =============================================================
+# Example Workflow: AI Code Review with Copilot CLI
+# =============================================================
+# Performs AI-powered code review on pull requests using
+# the reusable Copilot CLI Automation workflow.
+#
+# The actual Copilot CLI installation and execution logic lives
+# in the reusable workflow copilot-cli-action.yml. This keeps
+# the code review configuration clean and easy to customize
+# without touching the underlying mechanics.
+#
+# Copy this file to .github/workflows/ in your repository to use it.
+#
+# Inspired by: neildcruz/copilot-cli-automation-accelerator
+# =============================================================
+
+name: AI Code Review
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+  workflow_dispatch:
+    inputs:
+      custom_prompt:
+        description: 'Optional custom review instructions'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # -----------------------------------------------------------------
+  # Job 1: Delegate to the reusable Copilot CLI workflow
+  # -----------------------------------------------------------------
+  code-review:
+    name: AI Code Review
+    uses: ./.github/workflows/copilot-cli-action.yml
+    with:
+      agent: code-review
+      user_prompt: |
+        Review the code changes in this repository.
+
+        Please analyze:
+        1. The overall code structure and organization
+        2. Any potential bugs or issues
+        3. Performance optimizations that could be made
+        4. Code style and best practices
+        5. Error handling patterns
+
+        Provide a summary with actionable recommendations.
+
+        ${{ github.event.inputs.custom_prompt }}
+    secrets: inherit
+
+  # -----------------------------------------------------------------
+  # Job 2: Display results in the workflow step summary
+  # -----------------------------------------------------------------
+  display-results:
+    name: Display Review Results
+    needs: code-review
+    if: always() && needs.code-review.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Display Code Review Results
+        run: |
+          echo "## 📝 AI Code Review Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.head_ref || github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Reviewer:** GitHub Copilot Code Review Agent" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Findings" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.code-review.outputs.copilot_output }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*Review completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")*" >> $GITHUB_STEP_SUMMARY
+
+  # -----------------------------------------------------------------
+  # Job 3: Upload review artifacts
+  # -----------------------------------------------------------------
+  upload-artifacts:
+    name: Upload Review Artifacts
+    needs: code-review
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Upload Review Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-review-report
+          path: samples/findings/
+          retention-days: 30

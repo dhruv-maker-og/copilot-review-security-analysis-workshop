@@ -1,0 +1,178 @@
+# =============================================================
+# Reusable Workflow: Copilot CLI Automation
+# =============================================================
+# Encapsulates Copilot CLI installation and execution so that
+# caller workflows (code-review, security-analysis, etc.) stay
+# clean and only define triggers, prompts, and configuration.
+#
+# Usage (from a caller workflow):
+#   jobs:
+#     analysis:
+#       uses: ./.github/workflows/copilot-cli-action.yml
+#       with:
+#         agent: "code-review"
+#         user_prompt: "Review the code for quality issues."
+#       secrets: inherit
+#
+# Inspired by: neildcruz/copilot-cli-automation-accelerator
+# =============================================================
+
+name: Copilot CLI Automation
+
+on:
+  # Called by other workflows in this repository
+  workflow_call:
+    inputs:
+      agent:
+        description: 'Name of the agent to use (e.g., code-review, security-analysis)'
+        required: false
+        type: string
+        default: ''
+      user_prompt:
+        description: 'Prompt / instructions for the Copilot CLI agent'
+        required: true
+        type: string
+      node_version:
+        description: 'Node.js version to set up'
+        required: false
+        type: string
+        default: '20'
+      install_dependencies:
+        description: 'Run npm install in sample-app before analysis'
+        required: false
+        type: boolean
+        default: true
+      timeout_minutes:
+        description: 'Job-level timeout in minutes'
+        required: false
+        type: number
+        default: 30
+    outputs:
+      copilot_output:
+        description: 'Captured output from the Copilot CLI execution'
+        value: ${{ jobs.run-copilot.outputs.copilot_output }}
+
+  # Allow standalone manual runs for testing
+  workflow_dispatch:
+    inputs:
+      agent:
+        description: 'Name of the agent to use'
+        required: false
+        type: string
+        default: ''
+      user_prompt:
+        description: 'Prompt / instructions for the Copilot CLI agent'
+        required: true
+        type: string
+        default: 'Analyze the codebase and provide a summary of the project structure.'
+      node_version:
+        description: 'Node.js version to set up'
+        required: false
+        type: string
+        default: '20'
+      install_dependencies:
+        description: 'Run npm install in sample-app before analysis'
+        required: false
+        type: boolean
+        default: true
+      timeout_minutes:
+        description: 'Job-level timeout in minutes'
+        required: false
+        type: number
+        default: 30
+
+permissions:
+  contents: read
+
+jobs:
+  run-copilot:
+    name: Run Copilot CLI
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    outputs:
+      copilot_output: ${{ steps.run-copilot-cli.outputs.copilot_output }}
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      # ---------------------------------------------------------------
+      # Step 1: Checkout repository (full history for diff analysis)
+      # ---------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ---------------------------------------------------------------
+      # Step 2: Setup Node.js
+      # ---------------------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+
+      # ---------------------------------------------------------------
+      # Step 3: Install project dependencies (conditional)
+      # ---------------------------------------------------------------
+      - name: Install Dependencies
+        if: ${{ inputs.install_dependencies }}
+        run: cd sample-app && npm install
+
+      # ---------------------------------------------------------------
+      # Step 4: Install / upgrade GitHub Copilot CLI extension
+      # ---------------------------------------------------------------
+      - name: Install GitHub Copilot CLI
+        run: |
+          gh extension install github/gh-copilot || true
+          gh extension upgrade github/gh-copilot || true
+
+      # ---------------------------------------------------------------
+      # Step 5: Execute the Copilot CLI with the caller's prompt
+      # ---------------------------------------------------------------
+      - name: Run Copilot CLI
+        id: run-copilot-cli
+        run: |
+          echo "🚀 Running GitHub Copilot CLI..."
+
+          USER_PROMPT_FILE=$(mktemp)
+          cat << 'USER_PROMPT_EOF' > "$USER_PROMPT_FILE"
+          ${{ inputs.user_prompt }}
+          USER_PROMPT_EOF
+
+          OUTPUT_FILE=$(mktemp)
+
+          AGENT_ARG=""
+          if [ -n "${{ inputs.agent }}" ]; then
+            AGENT_ARG="--agent ${{ inputs.agent }}"
+          fi
+
+          # In a live environment this invokes `gh copilot` with the prompt.
+          # For the workshop, the output is simulated in the step summary.
+          echo "Agent: ${{ inputs.agent }}"
+          echo "Prompt file: $USER_PROMPT_FILE"
+          cat "$USER_PROMPT_FILE"
+
+          # --- Placeholder for actual Copilot CLI invocation ---
+          # gh copilot $AGENT_ARG --prompt-file "$USER_PROMPT_FILE" \
+          #   2>&1 | tee "$OUTPUT_FILE"
+          # EXIT_CODE=${PIPESTATUS[0]}
+          # ---
+
+          echo "The Copilot CLI agent would execute here with the prompt above." > "$OUTPUT_FILE"
+          echo "In a live environment, this step invokes \`gh copilot\` with the above prompt." >> "$OUTPUT_FILE"
+          EXIT_CODE=0
+
+          # Capture output for downstream jobs
+          OUTPUT=$(cat "$OUTPUT_FILE")
+          {
+            echo 'copilot_output<<COPILOT_OUTPUT_EOF'
+            echo "$OUTPUT"
+            echo 'COPILOT_OUTPUT_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+          # Clean up temp files
+          rm -f "$USER_PROMPT_FILE" "$OUTPUT_FILE"
+
+          echo "✅ Copilot CLI execution completed with exit code: $EXIT_CODE"
+          exit $EXIT_CODE
