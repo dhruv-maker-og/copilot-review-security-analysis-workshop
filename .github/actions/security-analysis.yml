@@ -134,9 +134,16 @@ jobs:
             echo "✅ No critical patterns detected."
           fi
 
+      - name: Write Security Report
+        run: |
+          mkdir -p reports
+          cat << 'EOF' > reports/security-analysis-report.md
+          ${{ needs.security-analysis.outputs.copilot_output }}
+          EOF
+
       - name: Upload Security Report
         uses: actions/upload-artifact@v4
         with:
           name: security-analysis-report
-          path: samples/findings/
+          path: reports/
           retention-days: 30
