@@ -132,7 +132,9 @@ jobs:
       # ---------------------------------------------------------------
       - name: Run Copilot CLI
         id: run-copilot-cli
+        shell: bash --noprofile --norc {0}
         run: |
+          set +e
           echo "🚀 Running GitHub Copilot CLI..."
 
           USER_PROMPT_FILE=$(mktemp)
@@ -156,7 +158,7 @@ jobs:
             2>&1 | tee "$OUTPUT_FILE"
           EXIT_CODE=${PIPESTATUS[0]}
 
-          # Capture output for downstream jobs (use cat directly to avoid bash interpolation)
+          # Capture output for downstream jobs
           {
             echo 'copilot_output<<COPILOT_OUTPUT_EOF'
             cat "$OUTPUT_FILE"
