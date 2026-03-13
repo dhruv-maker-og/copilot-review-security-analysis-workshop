@@ -147,13 +147,12 @@ jobs:
             AGENT_ARG="--agent ${{ inputs.agent }}"
           fi
 
-          # In a live environment this invokes `gh copilot` with the prompt.
-          # For the workshop, the output is simulated in the step summary.
+          USER_PROMPT=$(cat "$USER_PROMPT_FILE")
           echo "Agent: ${{ inputs.agent }}"
-          echo "Prompt file: $USER_PROMPT_FILE"
-          cat "$USER_PROMPT_FILE"
+          echo "Prompt:"
+          echo "$USER_PROMPT"
 
-          gh copilot $AGENT_ARG --prompt-file "$USER_PROMPT_FILE" \
+          gh copilot $AGENT_ARG -p "$USER_PROMPT" \
             2>&1 | tee "$OUTPUT_FILE"
           EXIT_CODE=${PIPESTATUS[0]}
 
