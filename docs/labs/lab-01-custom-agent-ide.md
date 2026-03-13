@@ -1,13 +1,13 @@
-# Lab 1: Custom Agent & Skills on IDE
+# Lab 1: Custom Instructions, Agent & Skills on IDE
 
 > **Time estimate:** 90 minutes
-> **Instructor note:** Demo the first 10 minutes (creating an agent file, showing it appear in Chat). Then let participants work hands-on. Walk the room and help with hooks — they're the trickiest part.
+> **Instructor note:** Demo the first 10 minutes (creating an instructions file, showing how it affects Copilot behavior). Then let participants work hands-on. Walk the room and help with hooks — they're the trickiest part.
 
 ---
 
 ## Objective
 
-Build a custom **Code Review Agent** in VS Code with custom instructions, skills, and GitHub Copilot hooks. Then extend it to also perform **security review**, so you have one agent that does both code review and security analysis.
+Set up project-level **custom instructions**, then build a custom **Code Review Agent** in VS Code, and optionally add **skills** and **GitHub Copilot hooks**. By the end, you'll have Copilot enforcing your code review and security standards across your project.
 
 ## Prerequisites
 
@@ -17,82 +17,25 @@ Build a custom **Code Review Agent** in VS Code with custom instructions, skills
 
 ---
 
-## Part A: Create a Custom Agent (25 min)
+## When to Use What — Practical Guidance
 
-### Step 1: Create the Agent Directory
+Before building, understand what each construct does and when it's worth creating:
 
-In your terminal (inside the workshop repository root):
+| Construct | What it does | When to create it | Impact |
+|-----------|-------------|-------------------|--------|
+| **Instructions** (`.instructions.md`) | Defines project-wide standards applied **automatically** to matching files via `applyTo` | **Always** — highest value, lowest effort | Broad: every Copilot interaction follows your rules |
+| **Agent** (`.agent.md`) | A dedicated persona with specific tools, behavior, and output format, invoked via `@agent-name` | When you need a **repeatable, on-demand task** with structured output | Focused: only when explicitly invoked |
+| **Skills** (`SKILL.md`) | A reusable, focused workflow shared across multiple agents | When you have **2+ agents** sharing the same domain knowledge | Modular: avoids duplication across agents |
 
-```bash
-mkdir -p .github/agents
-```
-
-### Step 2: Create the Agent File
-
-Create the file `.github/agents/code-review.agent.md` with the following content:
-
-```markdown
----
-name: code-review
-description: 'Expert code reviewer that analyzes code quality, identifies bugs, and suggests improvements with security awareness'
-tools:
-  - read
-  - edit
-  - search
----
-
-# Code Review Agent
-
-You are an expert code reviewer and application security engineer. When reviewing code, you perform two analyses:
-
-## Code Quality Review
-1. Check naming conventions, function structure, and readability
-2. Identify duplicated logic (DRY violations) and suggest refactoring
-3. Find magic numbers, debug logging, and TODO comments
-4. Evaluate error handling coverage and edge cases
-5. Check for callback hell and suggest modern alternatives
-
-## Security Review
-1. Scan for OWASP Top 10 vulnerabilities
-2. Identify hardcoded credentials, API keys, or tokens
-3. Check for injection vulnerabilities (SQL, command, XSS)
-4. Verify cryptographic practices (no MD5/SHA1 for passwords)
-5. Check that error messages do not expose internal details
-
-## Output Format
-Provide findings in this structure:
-- **Severity**: CRITICAL / HIGH / MEDIUM / LOW / SUGGESTION
-- **Category**: Security or Code Quality
-- **File and Line**: Exact location
-- **Description**: What the issue is and why it matters
-- **Recommendation**: Concrete fix with code example
-
-Start with a summary table, then list detailed findings sorted by severity.
-```
-
-> **TIP:** The YAML frontmatter (between the `---` markers) defines metadata. The Markdown body below is the system prompt that shapes the agent's behavior.
-
-### Step 3: Verify the Agent Appears in VS Code
-
-1. Open the **Copilot Chat** panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
-2. In the chat input box, type `@`
-3. You should see **code-review** listed among the available agents
-4. If it doesn't appear, try reloading VS Code: `Ctrl+Shift+P` → "Developer: Reload Window"
-
-### ✅ Checkpoint A
-
-| Check | Expected |
-|-------|----------|
-| Agent file exists | `.github/agents/code-review.agent.md` is created |
-| Agent visible in Chat | Typing `@` shows `code-review` in the agent list |
+> **Practical recommendation:** Start with instructions — they cover ~80% of the value. Add an agent when you find yourself repeatedly typing the same complex prompt. Add skills only when you're duplicating logic across agents. In this lab, we create all three for learning purposes, but **skills are marked optional**.
 
 ---
 
-## Part B: Create Custom Instructions (15 min)
+## Part A: Create Custom Instructions (20 min)
 
-Custom instructions provide additional context and rules that agents follow. The templates are already provided in the workshop repo.
+Instructions are the **foundation** — they apply automatically to all Copilot interactions on matching files, without any explicit invocation. This is where you define your project's coding standards, security rules, and conventions.
 
-### Step 4: Review the Instruction Templates
+### Step 1: Review the Instruction Templates
 
 Open and read the reference templates provided in the workshop repo:
 
@@ -101,9 +44,9 @@ Open and read the reference templates provided in the workshop repo:
 
 > **NOTE:** These files in `templates/` are **reference examples only** — they are not consumed by VS Code or Copilot. In the next step, you will create the actual instructions file under `.github/instructions/`, which is the path Copilot recognizes.
 
-These files define the detailed review checklists that your agent will follow.
+These files define the detailed review checklists that Copilot will follow.
 
-### Step 5: Create an Instructions File for VS Code
+### Step 2: Create an Instructions File for VS Code
 
 Create a custom instructions file that VS Code will pick up:
 
@@ -533,20 +476,111 @@ When performing a code review, apply these prompt engineering principles from th
 
 > **NOTE:** The `applyTo` field tells Copilot to apply these instructions when working with `.js` files in this project.
 
+### Step 3: Verify Instructions Are Active
+
+1. Open any `.js` file in the project (e.g., `sample-app/server.js`)
+2. Open the Copilot Chat panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
+3. Ask Copilot a question about the file — it should now follow the review priorities and standards defined in your instructions
+4. The instructions apply automatically because of `applyTo: '**/*.js'` — no need to reference them explicitly
+
+> **TIP:** Instructions are the highest-impact customization you can make. Even without an agent or skills, every Copilot interaction with `.js` files in this project will now follow your review standards.
+
+### ✅ Checkpoint A
+
+| Check | Expected |
+|-------|----------|
+| Templates reviewed | You've read both `templates/instructions/` files |
+| Instructions file created | `.github/instructions/review-standards.instructions.md` exists |
+| Instructions active | Copilot follows review standards when you chat about `.js` files |
+
+---
+
+## Part B: Create a Custom Agent (25 min)
+
+Now that your project has instructions (the standards), create an **agent** (the persona) that uses them. An agent gives you an on-demand, structured reviewer you invoke by name — with a specific output format, tool permissions, and behavioral framing that instructions alone don't provide.
+
+> **When is an agent worth it?** When you find yourself repeatedly typing the same complex prompt (e.g., "review this file for security issues and produce a severity table"). The agent encapsulates that prompt so you just type `@code-review`.
+
+### Step 4: Create the Agent Directory
+
+In your terminal (inside the workshop repository root):
+
+```bash
+mkdir -p .github/agents
+```
+
+### Step 5: Create the Agent File
+
+Create the file `.github/agents/code-review.agent.md` with the following content:
+
+```markdown
+---
+name: code-review
+description: 'Expert code reviewer that analyzes code quality, identifies bugs, and suggests improvements with security awareness'
+tools:
+  - read
+  - edit
+  - search
+---
+
+# Code Review Agent
+
+You are an expert code reviewer and application security engineer. When reviewing code, you perform two analyses:
+
+## Code Quality Review
+1. Check naming conventions, function structure, and readability
+2. Identify duplicated logic (DRY violations) and suggest refactoring
+3. Find magic numbers, debug logging, and TODO comments
+4. Evaluate error handling coverage and edge cases
+5. Check for callback hell and suggest modern alternatives
+
+## Security Review
+1. Scan for OWASP Top 10 vulnerabilities
+2. Identify hardcoded credentials, API keys, or tokens
+3. Check for injection vulnerabilities (SQL, command, XSS)
+4. Verify cryptographic practices (no MD5/SHA1 for passwords)
+5. Check that error messages do not expose internal details
+
+## Output Format
+Provide findings in this structure:
+- **Severity**: CRITICAL / HIGH / MEDIUM / LOW / SUGGESTION
+- **Category**: Security or Code Quality
+- **File and Line**: Exact location
+- **Description**: What the issue is and why it matters
+- **Recommendation**: Concrete fix with code example
+
+Start with a summary table, then list detailed findings sorted by severity.
+```
+
+> **TIP:** The YAML frontmatter (between the `---` markers) defines metadata. The Markdown body below is the system prompt that shapes the agent's behavior.
+>
+> **How does this relate to instructions?** The agent automatically inherits the instructions from Part A (because of `applyTo: '**/*.js'`). The agent file adds the output format, tool permissions, and behavioral framing on top. You don't need to duplicate the review criteria here.
+
+### Step 6: Verify the Agent Appears in VS Code
+
+1. Open the **Copilot Chat** panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
+2. In the chat input box, type `@`
+3. You should see **code-review** listed among the available agents
+4. If it doesn't appear, try reloading VS Code: `Ctrl+Shift+P` → "Developer: Reload Window"
+
 ### ✅ Checkpoint B
 
 | Check | Expected |
 |-------|----------|
-| Instructions reviewed | You've read both `templates/instructions/` files |
-| VS Code instructions file | `.github/instructions/review-standards.instructions.md` exists |
+| Agent file exists | `.github/agents/code-review.agent.md` is created |
+| Agent visible in Chat | Typing `@` shows `code-review` in the agent list |
 
 ---
 
-## Part C: Create Agent Skills (15 min)
+## Part C: Create Agent Skills — Optional (15 min)
 
-Skills are focused capabilities that add domain knowledge to your agents.
+> **This part is optional.** Skills are useful when you have multiple agents that need to share the same domain knowledge. With a single agent, the logic in your `.agent.md` file and `.instructions.md` file already covers what a skill would do. Complete this section to learn how skills work, or skip ahead to Part D.
 
-### Step 6: Review the Skill Templates
+Skills are focused capabilities that add domain knowledge to your agents. They define a reusable, structured workflow that any agent can reference.
+
+> **When are skills worth it?** When you later create a second agent (e.g., `@security-only`) that needs the same scanning workflow as `@code-review`. The skill avoids duplicating that logic across agent files.
+
+### Step 7: Review the Skill Templates
 
 Open the reference skill templates in the workshop repo:
 
@@ -555,7 +589,7 @@ Open the reference skill templates in the workshop repo:
 
 > **NOTE:** Like the instruction templates, these files in `templates/` are **reference examples**. The actual skill you create in the next step goes under `.github/skills/`, which is where Copilot looks for skills.
 
-### Step 7: Create a Skill for VS Code
+### Step 8: Create a Skill for VS Code
 
 Create a skill directory and file:
 
@@ -601,7 +635,7 @@ The output should follow this structure:
 [Full description with code fix for each finding]
 ```
 
-### ✅ Checkpoint C
+### ✅ Checkpoint C (Optional)
 
 | Check | Expected |
 |-------|----------|
@@ -616,7 +650,7 @@ Hooks are shell commands or scripts that run automatically during Copilot agent 
 
 > **IMPORTANT:** These are **GitHub Copilot hooks** (for the Copilot coding agent), NOT Git hooks. They are defined in `.github/hooks/` and follow the [GitHub Copilot hooks specification](https://docs.github.com/en/copilot/reference/hooks-configuration).
 
-### Step 8: Review the Hooks Configuration
+### Step 9: Review the Hooks Configuration
 
 The workshop repository already includes a hooks configuration. Open and examine:
 
@@ -654,7 +688,7 @@ The workshop repository already includes a hooks configuration. Open and examine
 | `postToolUse` | `post-review.sh` | Run formatter/linter after agent edits, append to report |
 | `agentStop` | `security-gate.sh` | Check for CRITICAL findings and block if found |
 
-### Step 9: Review the Hook Scripts
+### Step 10: Review the Hook Scripts
 
 Open each script and understand what it does:
 
@@ -664,7 +698,7 @@ Open each script and understand what it does:
 
 3. **`.github/hooks/scripts/security-gate.sh`** — Scans for CRITICAL patterns (eval, SQL injection), exits non-zero to block if found. Logs gate decision to `logs/copilot/security-gate.log`.
 
-### Step 10: Make Hook Scripts Executable
+### Step 11: Make Hook Scripts Executable
 
 ```bash
 chmod +x .github/hooks/scripts/post-review.sh
@@ -674,7 +708,7 @@ chmod +x .github/hooks/scripts/log-context.sh
 
 > **Windows users:** Scripts will execute via Git Bash or WSL. The `powershell` field in hooks.json can also be used for Windows-native execution.
 
-### Step 11: Test a Hook Script Manually
+### Step 12: Test a Hook Script Manually
 
 You can test the security gate script directly:
 
@@ -722,7 +756,7 @@ cat logs/copilot/session.log
 
 ## Part E: Test the Agent (10 min)
 
-### Step 12: Invoke the Agent on the Sample App
+### Step 13: Invoke the Agent on the Sample App
 
 1. Open the Copilot Chat panel
 2. Type:
@@ -733,7 +767,7 @@ cat logs/copilot/session.log
 
 3. Wait for the agent to analyze the file
 
-### Step 13: Review the Output
+### Step 14: Review the Output
 
 The agent should identify findings like:
 
@@ -747,7 +781,7 @@ The agent should identify findings like:
 | 6 | MEDIUM | Code Quality | Error details leaked to client (line ~59) |
 | 7 | LOW | Code Quality | Secrets logged to console (line ~115) |
 
-### Step 14: Test on utils.js
+### Step 15: Test on utils.js
 
 ```
 @code-review Review the file sample-app/utils.js focusing on code quality. Identify duplicated logic, magic numbers, and unnecessary debug logging.
@@ -780,7 +814,7 @@ Expected findings:
 | Hook scripts fail with "permission denied" | Run `chmod +x` on each script |
 | Hook logs not created | Ensure the `logs/copilot/` directory is writable; create it with `mkdir -p` |
 | Security gate passes unexpectedly | Check that `sample-app/server.js` still contains the original vulnerable code |
-| Skills not recognized | Ensure the SKILL.md file has valid YAML frontmatter with `name` and `description` |
+| Skills not recognized | Ensure the SKILL.md file has valid YAML frontmatter with `name` and `description` (Part C is optional) |
 
 ## Where Hook Logs Appear
 
@@ -792,10 +826,10 @@ Expected findings:
 ## Cleanup / Reset
 
 ```bash
-# Remove created agent files (keeps reference templates in templates/)
-rm -rf .github/agents/
+# Remove created files (keeps reference templates in templates/)
 rm -rf .github/instructions/
-rm -rf .github/skills/
+rm -rf .github/agents/
+rm -rf .github/skills/  # Only if you created skills (Part C)
 
 # Reset logs
 rm -rf logs/
