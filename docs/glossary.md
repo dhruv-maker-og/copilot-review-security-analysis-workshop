@@ -11,7 +11,7 @@ Quick reference for terms used throughout this workshop.
 | **Copilot Chat** | The VS Code Chat panel where you interact with GitHub Copilot conversationally. Custom agents appear here as selectable personas. |
 | **Copilot CLI** | A GitHub CLI extension (`gh copilot`) that provides AI-powered command-line suggestions, code explanations, and agent execution from the terminal. |
 | **Copilot SDK** | The `@github/copilot-sdk` Node.js package for building programmatic AI agents. Provides `CopilotClient`, `defineTool`, and session management APIs. |
-| **Custom Instructions** | Markdown files that provide additional context and rules to Copilot agents. Stored in `agents/instructions/` and referenced by agents to shape their review criteria. |
+| **Custom Instructions** | Markdown files that provide additional context and rules to Copilot agents. Stored in `.github/instructions/` for Copilot to pick up. Reference templates are provided in `templates/instructions/`. |
 | **CWE** | Common Weakness Enumeration — a standardized list of software security weaknesses (e.g., CWE-89 for SQL Injection). Used in security analysis findings. |
 | **defineTool** | A Copilot SDK function for registering custom tools that agents can invoke. Each tool has a name, description, JSON Schema parameters, and an async handler function. |
 | **GitHub Actions** | GitHub's CI/CD platform for automating workflows. In this workshop, used to run code review and security analysis agents on pull requests. |

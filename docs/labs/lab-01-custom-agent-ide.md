@@ -92,12 +92,14 @@ Start with a summary table, then list detailed findings sorted by severity.
 
 Custom instructions provide additional context and rules that agents follow. The templates are already provided in the workshop repo.
 
-### Step 4: Review the Instruction Files
+### Step 4: Review the Instruction Templates
 
-Open and read the existing instruction templates:
+Open and read the reference templates provided in the workshop repo:
 
-- `agents/instructions/code-review.md` — Code quality review criteria
-- `agents/instructions/security-review.md` — Security analysis criteria (OWASP Top 10)
+- `templates/instructions/code-review.md` — Code quality review criteria
+- `templates/instructions/security-review.md` — Security analysis criteria (OWASP Top 10)
+
+> **NOTE:** These files in `templates/` are **reference examples only** — they are not consumed by VS Code or Copilot. In the next step, you will create the actual instructions file under `.github/instructions/`, which is the path Copilot recognizes.
 
 These files define the detailed review checklists that your agent will follow.
 
@@ -142,7 +144,7 @@ When reviewing JavaScript files in this project, always check for:
 
 | Check | Expected |
 |-------|----------|
-| Instructions reviewed | You've read both `agents/instructions/` files |
+| Instructions reviewed | You've read both `templates/instructions/` files |
 | VS Code instructions file | `.github/instructions/review-standards.instructions.md` exists |
 
 ---
@@ -153,10 +155,12 @@ Skills are focused capabilities that add domain knowledge to your agents.
 
 ### Step 6: Review the Skill Templates
 
-Open the existing skill templates in the workshop repo:
+Open the reference skill templates in the workshop repo:
 
-- `agents/skills/skill-code-review.md` — Code review skill definition
-- `agents/skills/skill-security-analysis.md` — Security analysis skill definition
+- `templates/skills/skill-code-review.md` — Code review skill definition
+- `templates/skills/skill-security-analysis.md` — Security analysis skill definition
+
+> **NOTE:** Like the instruction templates, these files in `templates/` are **reference examples**. The actual skill you create in the next step goes under `.github/skills/`, which is where Copilot looks for skills.
 
 ### Step 7: Create a Skill for VS Code
 
@@ -208,7 +212,7 @@ The output should follow this structure:
 
 | Check | Expected |
 |-------|----------|
-| Skill templates reviewed | You've read both `agents/skills/` files |
+| Skill templates reviewed | You've read both `templates/skills/` files |
 | Combined skill created | `.github/skills/review-and-scan/SKILL.md` exists |
 
 ---
@@ -395,7 +399,7 @@ Expected findings:
 ## Cleanup / Reset
 
 ```bash
-# Remove created agent files (keeps templates in agents/)
+# Remove created agent files (keeps reference templates in templates/)
 rm -rf .github/agents/
 rm -rf .github/instructions/
 rm -rf .github/skills/
