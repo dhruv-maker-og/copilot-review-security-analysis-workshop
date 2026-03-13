@@ -93,7 +93,7 @@ jobs:
       copilot_output: ${{ steps.run-copilot-cli.outputs.copilot_output }}
 
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ secrets.COPILOT_TOKEN || secrets.GITHUB_TOKEN }}
 
     steps:
       # ---------------------------------------------------------------
@@ -156,11 +156,10 @@ jobs:
             2>&1 | tee "$OUTPUT_FILE"
           EXIT_CODE=${PIPESTATUS[0]}
 
-          # Capture output for downstream jobs
-          OUTPUT=$(cat "$OUTPUT_FILE")
+          # Capture output for downstream jobs (use cat directly to avoid bash interpolation)
           {
             echo 'copilot_output<<COPILOT_OUTPUT_EOF'
-            echo "$OUTPUT"
+            cat "$OUTPUT_FILE"
             echo 'COPILOT_OUTPUT_EOF'
           } >> "$GITHUB_OUTPUT"
 
