@@ -153,15 +153,9 @@ jobs:
           echo "Prompt file: $USER_PROMPT_FILE"
           cat "$USER_PROMPT_FILE"
 
-          # --- Placeholder for actual Copilot CLI invocation ---
-          # gh copilot $AGENT_ARG --prompt-file "$USER_PROMPT_FILE" \
-          #   2>&1 | tee "$OUTPUT_FILE"
-          # EXIT_CODE=${PIPESTATUS[0]}
-          # ---
-
-          echo "The Copilot CLI agent would execute here with the prompt above." > "$OUTPUT_FILE"
-          echo "In a live environment, this step invokes \`gh copilot\` with the above prompt." >> "$OUTPUT_FILE"
-          EXIT_CODE=0
+          gh copilot $AGENT_ARG --prompt-file "$USER_PROMPT_FILE" \
+            2>&1 | tee "$OUTPUT_FILE"
+          EXIT_CODE=${PIPESTATUS[0]}
 
           # Capture output for downstream jobs
           OUTPUT=$(cat "$OUTPUT_FILE")
