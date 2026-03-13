@@ -113,7 +113,7 @@ mkdir -p .github/instructions
 
 Create `.github/instructions/review-standards.instructions.md`:
 
-```markdown
+`````markdown
 ---
 description: 'Code review and security standards for this project'
 applyTo: '**/*.js'
@@ -529,6 +529,7 @@ When performing a code review, apply these prompt engineering principles from th
 - **Build Tool**: npm
 - **Testing**: Custom lightweight test runner using Node.js built-in `assert` module
 - **Code Style**: CommonJS modules (`require`/`module.exports`)
+`````
 
 > **NOTE:** The `applyTo` field tells Copilot to apply these instructions when working with `.js` files in this project.
 
