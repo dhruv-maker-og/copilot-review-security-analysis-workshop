@@ -1,0 +1,36 @@
+# ============================================================
+# .gitignore
+# ============================================================
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Generated reports (keep examples, ignore runtime output)
+samples/findings/report.md
+
+# Coverage
+coverage/
