@@ -85,6 +85,8 @@ jobs:
       contents: read
     steps:
       - name: Display Security Analysis Results
+        env:
+          COPILOT_OUTPUT: ${{ needs.security-analysis.outputs.copilot_output }}
         run: |
           echo "## 🔒 AI Security Analysis Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -95,7 +97,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Findings" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "${{ needs.security-analysis.outputs.copilot_output }}" >> $GITHUB_STEP_SUMMARY
+          printf '%s\n' "$COPILOT_OUTPUT" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "*Analysis completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")*" >> $GITHUB_STEP_SUMMARY

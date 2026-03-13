@@ -67,6 +67,8 @@ jobs:
       contents: read
     steps:
       - name: Display Code Review Results
+        env:
+          COPILOT_OUTPUT: ${{ needs.code-review.outputs.copilot_output }}
         run: |
           echo "## 📝 AI Code Review Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -76,7 +78,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Findings" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "${{ needs.code-review.outputs.copilot_output }}" >> $GITHUB_STEP_SUMMARY
+          printf '%s\n' "$COPILOT_OUTPUT" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "*Review completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")*" >> $GITHUB_STEP_SUMMARY
