@@ -698,6 +698,39 @@ Open each script and understand what it does:
 
 3. **`.github/hooks/scripts/security-gate.sh`** — Scans for CRITICAL patterns (eval, SQL injection), exits non-zero to block if found. Logs gate decision to `logs/copilot/security-gate.log`.
 
+### How Copilot Hooks Help in Code Review & Security Analysis
+
+The `@code-review` agent uses AI to find bugs and security issues — but AI can miss things. Hooks act as an **automatic safety net** that runs regardless of what the AI does.
+
+| Hook | Event | What It Does | Why It Matters |
+|------|-------|-------------|----------------|
+| `log-context.sh` | `sessionStart` | Logs who ran the review, when, and where | Creates an **audit trail** for compliance — proof that reviews happened, without logging sensitive data |
+| `post-review.sh` | `postToolUse` | Runs Prettier + ESLint, appends to `report.md` | Catches broken formatting or new lint errors from agent-suggested fixes; builds a running report **automatically** |
+| `security-gate.sh` | `agentStop` | Scans for `eval()` on user input, SQL injection patterns | **Hard stop** — blocks the workflow with a non-zero exit if critical patterns are found, even if the AI missed them |
+
+**Real-world flow:**
+
+```
+@code-review reviews server.js
+  → [sessionStart] logs the session
+  → Agent analyzes (AI)
+  → [postToolUse] formats code, updates report
+  → Agent finishes
+  → [agentStop] scans for eval/SQL injection
+  → ❌ CRITICAL found → BLOCKS workflow 🚨
+```
+
+**Why not rely on AI alone?**
+
+| AI Only | AI + Hooks |
+|---------|-----------|
+| Might miss `eval()` buried in code | Hook **always** catches it — pattern matching, not judgment |
+| No record of when reviews happened | Session log created **automatically** |
+| Suggested fixes can break linting | ESLint runs after **every** edit |
+| Developer can ignore AI warnings | Security gate **blocks** the workflow entirely |
+
+> **Bottom line:** Hooks make security reviews **reliable and enforceable**, not just advisory.
+
 ### Step 11: Make Hook Scripts Executable
 
 ```bash
