@@ -48,6 +48,8 @@ gh version 2.x.x (202x-xx-xx)
 
 ### 2. Authenticate GitHub CLI
 
+> **GHES users:** Use `gh auth login --hostname your-ghes.company.com` instead. See [Step 6: GHES Setup](06-ghes-setup.md#3-github-cli-authentication-replaces-step-4) for full instructions.
+
 ```bash
 gh auth login
 ```

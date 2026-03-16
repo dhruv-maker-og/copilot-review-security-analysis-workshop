@@ -19,6 +19,7 @@ This hands-on workshop teaches you to create, configure, and run AI-powered code
 | | [Node.js Install](docs/setup/03-nodejs-install.md) | 10 min | Install Node.js 20+ LTS and tsx |
 | | [Copilot CLI Install & Auth](docs/setup/04-copilot-cli-install-auth.md) | 15 min | Install and authenticate GitHub Copilot CLI |
 | | [Validation Checks](docs/setup/05-validation-checks.md) | 10 min | Run consolidated validation checklist |
+| | [GHES Setup *(GHES only)*](docs/setup/06-ghes-setup.md) | 15 min | Additional configuration for GitHub Enterprise Server |
 | **Exercise 1** | [Custom Agent & Skills on IDE](docs/labs/lab-01-custom-agent-ide.md) | 90 min | Build custom agent, instructions, skills, and hooks |
 | **Exercise 2** | [Invocation from IDE & CLI](docs/labs/lab-02-invocation-ide-cli.md) | 60 min | Invoke agents from IDE, CLI, and GitHub Actions |
 | **Exercise 3** | [SDK Automation](docs/labs/lab-03-sdk-automation.md) | 60 min | Automate code review and security analysis via Copilot SDK |

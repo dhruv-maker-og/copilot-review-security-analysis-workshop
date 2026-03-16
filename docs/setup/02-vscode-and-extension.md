@@ -35,6 +35,8 @@ x64
 
 ### 2. Install GitHub Copilot Extension
 
+> **GHES users:** After installing the extensions, additional configuration is required to point VS Code at your GHES instance. See [Step 6: GHES Setup](06-ghes-setup.md#4-vs-code-copilot-extension-replaces-step-2-auth).
+
 1. Open VS Code
 2. Click the **Extensions** icon in the sidebar (or press `Ctrl+Shift+X` / `Cmd+Shift+X`)
 3. Search for **"GitHub Copilot"**

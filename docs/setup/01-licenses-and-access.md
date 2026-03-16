@@ -38,6 +38,8 @@ If you see a permission error, contact your workshop facilitator.
 
 ### 3. Create a Personal Access Token (for SDK exercises)
 
+> **GHES users:** Create your token on your GHES instance instead: `https://your-ghes.company.com/settings/tokens`. See [Step 6: GHES Setup](06-ghes-setup.md#5-personal-access-tokens-replaces-step-1-token-creation) for details.
+
 1. Go to [https://github.com/settings/tokens](https://github.com/settings/tokens)
 2. Click **Generate new token (classic)** or **Fine-grained token**
 3. Required scopes:
