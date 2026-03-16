@@ -229,7 +229,7 @@ async function main(): Promise<void> {
   process.stdout.write("Assistant: ");
   await session.sendAndWait({
     prompt: "Hello! Please introduce yourself and explain how you can help review code.",
-  });
+  }, 120000);
   console.log("\n");
 
   // Collect input lines; pasted text arrives within ms, so a short
@@ -272,8 +272,7 @@ async function main(): Promise<void> {
     if (prompt === null) { console.log("\n👋 Shutting down Code Review Agent..."); break; }
     if (prompt === "") continue;
     console.log("");
-    await session.sendAndWait({ prompt });
-    console.log("\n");
+    await session.sendAndWait({ prompt }, 120000);    console.log("\n");
   }
 
   rl.close();
