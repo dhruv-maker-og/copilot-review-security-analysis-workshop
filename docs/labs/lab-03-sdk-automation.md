@@ -440,4 +440,4 @@ cd sdk/nodejs && npm install && cd ../..
 2. ✅ **CLI** — Copilot CLI invocation with GitHub Actions workflows
 3. ✅ **SDK** — Programmatic automation with Node.js and the Copilot SDK
 
-Return to the [Workshop Overview](../workshop-overview.md) for wrap-up and next steps.
+Proceed to [Lab 4: Code Review on GitHub.com →](lab-04-code-review-github-platform.md)

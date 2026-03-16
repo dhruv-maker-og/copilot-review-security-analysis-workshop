@@ -42,6 +42,8 @@ Participants work with a realistic sample application that contains intentional 
 | [Lab 2: IDE & CLI Invocation](labs/lab-02-invocation-ide-cli.md) | 60 min | Invoke from IDE, CLI, GitHub Actions workflows | Show workflow YAML before participants edit |
 | Break | 10 min | | |
 | [Lab 3: SDK Automation](labs/lab-03-sdk-automation.md) | 60 min | Copilot SDK agents in Node.js, runner scripts | Walk through the agent code structure together |
+| Break | 10 min | | |
+| [Lab 4: Code Review on GitHub.com](labs/lab-04-code-review-github-platform.md) | 30 min | Request Copilot as PR reviewer on GitHub.com | Browser-only — no local tools needed |
 
 ### Phase 3: Outcomes and Wrap-Up (~30 minutes)
 
@@ -63,6 +65,7 @@ By the end of the workshop, each participant will have:
 | 2 | Built a custom code review agent with instructions, skills, and hooks | Agent file, instruction files, skill files, hooks.json, and hook scripts committed |
 | 3 | Invoked agents from IDE and CLI, with GitHub Actions workflows | Agent used in Chat panel, CLI command executed, workflow YAML created |
 | 4 | Automated code review and security analysis via SDK | `code-review-agent.ts` and `security-analysis-agent.ts` executed, report generated |
+| 5 | Requested Copilot code review on a GitHub.com pull request | Copilot review comments visible on the PR, aligned with custom instructions |
 
 ---
 

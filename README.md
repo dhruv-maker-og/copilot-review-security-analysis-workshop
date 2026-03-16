@@ -23,9 +23,10 @@ This hands-on workshop teaches you to create, configure, and run AI-powered code
 | **Exercise 1** | [Custom Agent & Skills on IDE](docs/labs/lab-01-custom-agent-ide.md) | 90 min | Build custom agent, instructions, skills, and hooks |
 | **Exercise 2** | [Invocation from IDE & CLI](docs/labs/lab-02-invocation-ide-cli.md) | 60 min | Invoke agents from IDE, CLI, and GitHub Actions |
 | **Exercise 3** | [SDK Automation](docs/labs/lab-03-sdk-automation.md) | 60 min | Automate code review and security analysis via Copilot SDK |
+| **Exercise 4** | [Code Review on GitHub.com](docs/labs/lab-04-code-review-github-platform.md) | 30 min | Request Copilot as a PR reviewer on GitHub.com |
 | **Wrap-up** | [Workshop Overview](docs/workshop-overview.md) | 30 min | Review outcomes, next steps, and Q&A |
 
-**Total estimated time: ~5 hours** (adjust pace for your audience)
+**Total estimated time: ~5.5 hours** (adjust pace for your audience)
 
 ---
 
@@ -52,6 +53,7 @@ By the end of this workshop, you will be able to:
 2. **Build a custom agent** with custom instructions, skills, and post-agent code-review hooks
 3. **Run code review and security review** from the IDE and Copilot CLI using reusable workflows
 4. **Automate both code review and security analysis** via Copilot SDK (Node.js) and run it via scripts
+5. **Request Copilot code review on GitHub.com** directly from a pull request, using custom review instructions
 
 ---
 
@@ -66,10 +68,8 @@ By the end of this workshop, you will be able to:
 │   │   ├── code-review.yml            # GitHub Actions: AI code review on PRs
 │   │   └── security-analysis.yml      # GitHub Actions: AI security scan on PRs + schedule
 │   └── hooks/
-│       ├── hooks.json                 # Copilot hooks config (postToolUse, agentStop, sessionStart)
+│       ├── hooks.json                 # Copilot hooks config (sessionStart only — participants add more in Lab 1)
 │       └── scripts/
-│           ├── post-review.sh         # Hook: lint/format + append report links
-│           ├── security-gate.sh       # Hook: fail on CRITICAL severity findings
 │           └── log-context.sh         # Hook: write JSON context to logs for debugging
 │
 ├── docs/
