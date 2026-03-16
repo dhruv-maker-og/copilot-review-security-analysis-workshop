@@ -7,7 +7,7 @@
  * Usage:  npx tsx code-review-agent.ts
  */
 
-import { CopilotClient, defineTool } from "@github/copilot-sdk";
+import { CopilotClient, defineTool, approveAll } from "@github/copilot-sdk";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
@@ -190,7 +190,15 @@ async function main(): Promise<void> {
     model,
     streaming: true,
     tools: [analyzeCode, prepareReviewComment],
-    systemPrompt: SYSTEM_PROMPT,
+    mcpServers: {
+      github: {
+        type: "http",
+        url: "https://api.githubcopilot.com/mcp/",
+        tools: ["*"],
+      },
+    },
+    systemMessage: { mode: "append", content: SYSTEM_PROMPT },
+    onPermissionRequest: approveAll,
   });
 
   console.log("Tools registered:");
@@ -204,32 +212,72 @@ async function main(): Promise<void> {
     }
   });
 
-  session.on("tool.call", (event) => {
-    console.log(`\n⚙️  Calling tool: ${event.data?.toolName ?? "unknown"}...`);
+  session.on("tool.execution_start", (event) => {
+    console.log(`\n⚙️  Calling tool: ${event.data.toolName}...`);
   });
 
-  session.on("tool.result", (event) => {
-    console.log(`✅ Tool completed: ${event.data?.toolName ?? "unknown"}\n`);
+  session.on("tool.execution_complete", (event) => {
+    console.log(`✅ Tool completed: ${event.data.toolCallId}\n`);
   });
 
-  // Interactive REPL
+  // Interactive REPL with automatic multi-line paste detection
   const rl = readline.createInterface({ input, output });
-  console.log("Enter a prompt (or 'exit' to quit):");
+  console.log("Type a prompt and press Enter to send (pasted multi-line input is auto-detected).");
+  console.log("Type 'exit' to quit.\n");
 
-  while (true) {
-    const prompt = await rl.question("> ");
-    if (prompt.trim().toLowerCase() === "exit") {
-      console.log("\nGoodbye!");
-      break;
-    }
-    if (prompt.trim() === "") continue;
+  // Send an initial greeting so the agent introduces itself
+  process.stdout.write("Assistant: ");
+  await session.sendAndWait({
+    prompt: "Hello! Please introduce yourself and explain how you can help review code.",
+  });
+  console.log("\n");
 
+  // Collect input lines; pasted text arrives within ms, so a short
+  // timeout after the last line distinguishes paste from typing.
+  const PASTE_DELAY_MS = 150;
+  let done = false;
+
+  const collectInput = (): Promise<string | null> =>
+    new Promise((resolve) => {
+      const lines: string[] = [];
+      let timer: ReturnType<typeof setTimeout> | null = null;
+
+      const flush = () => {
+        rl.removeListener("line", onLine);
+        rl.removeListener("close", onClose);
+        const text = lines.join("\n").trim();
+        resolve(text || null);
+      };
+
+      const onLine = (line: string) => {
+        if (lines.length === 0) {
+          if (line.trim().toLowerCase() === "exit") { done = true; resolve(null); rl.close(); return; }
+          if (line.trim() === "") { resolve(""); return; }
+          process.stdout.write("> ");
+        }
+        lines.push(line);
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(flush, PASTE_DELAY_MS);
+      };
+
+      const onClose = () => { done = true; resolve(null); };
+
+      rl.on("line", onLine);
+      rl.on("close", onClose);
+    });
+
+  while (!done) {
+    process.stdout.write("> ");
+    const prompt = await collectInput();
+    if (prompt === null) { console.log("\n👋 Shutting down Code Review Agent..."); break; }
+    if (prompt === "") continue;
     console.log("");
     await session.sendAndWait({ prompt });
     console.log("\n");
   }
 
   rl.close();
+  await client.stop();
 }
 
 main().catch((err) => {

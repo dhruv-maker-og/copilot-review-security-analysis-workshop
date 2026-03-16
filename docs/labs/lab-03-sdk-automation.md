@@ -55,7 +55,7 @@ Open `sdk/nodejs/code-review-agent.ts` and understand the key patterns:
 
 ```typescript
 // 1. Import SDK
-import { CopilotClient, defineTool } from "@github/copilot-sdk";
+import { CopilotClient, defineTool, approveAll } from "@github/copilot-sdk";
 
 // 2. Define tools with JSON Schema parameters
 const analyzeCode = defineTool("analyze_code", {
@@ -67,13 +67,14 @@ const analyzeCode = defineTool("analyze_code", {
   },
 });
 
-// 3. Create a session with model, tools, and system prompt
+// 3. Create a session with model, tools, and system message
 const client = new CopilotClient();
 const session = await client.createSession({
   model: "gpt-4o",
   streaming: true,
   tools: [analyzeCode, prepareReviewComment],
-  systemPrompt: "You are an expert code reviewer..."
+  systemMessage: { mode: "append", content: SYSTEM_PROMPT },
+  onPermissionRequest: approveAll,
 });
 
 // 4. Handle events
@@ -162,11 +163,15 @@ Tools registered:
   - analyze_code: Analyze a code snippet for quality issues
   - prepare_review_comment: Prepare a structured review comment
 
-Enter a prompt (or 'exit' to quit):
+Type a prompt and press Enter to send (pasted multi-line input is auto-detected).
+Type 'exit' to quit.
+
+Assistant: [The agent introduces itself and explains how it can help]
+
 >
 ```
 
-Try this prompt when the agent starts:
+Try this prompt when the agent starts (paste and it will be auto-detected):
 
 ```
 Analyze the following code for quality issues:
@@ -207,11 +212,15 @@ Tools registered:
   - scan_vulnerabilities: Scan code for security vulnerabilities
   - prepare_security_report: Prepare a security analysis report
 
-Enter a prompt (or 'exit' to quit):
+Type a prompt and press Enter to send (pasted multi-line input is auto-detected).
+Type 'exit' to quit.
+
+Assistant: [The agent introduces itself and explains how it can help]
+
 >
 ```
 
-Try this prompt:
+Try this prompt (paste and it will be auto-detected):
 
 ```
 Scan this code for security vulnerabilities:
