@@ -86,6 +86,23 @@ session.on("assistant.message_delta", (event) => {
 await session.sendAndWait({ prompt: "Review this code..." });
 ```
 
+#### Key Components
+
+**Two custom tools:**
+
+- **`analyze_code`** — Scans code line-by-line for issues: `console.log` debug statements, `var` instead of `const`/`let`, lines over 120 characters, unresolved `TODO`/`FIXME`/`HACK` comments, empty catch blocks, and deeply nested code (depth > 4).
+- **`prepare_review_comment`** — Formats findings into a markdown PR comment with severity icons (🔴🟠🟡🟢) and a numbered list.
+
+**AI agent session:**
+
+- Creates a Copilot session with both tools registered and connects to GitHub's MCP server (`api.githubcopilot.com/mcp/`) for additional GitHub-native capabilities.
+- A system prompt instructs the AI to: analyze → summarize → format → suggest fixes.
+
+**Interactive REPL:**
+
+- Starts with an auto-greeting from the agent. Accepts user input in a loop; paste detection batches multi-line input (150ms timeout).
+- Streams AI responses to stdout in real time via `assistant.message_delta` events. Type `exit` to quit.
+
 ### Step 5: Review the Security Analysis Agent
 
 Open `sdk/nodejs/security-analysis-agent.ts` and compare:
@@ -256,6 +273,17 @@ Type `exit` to quit.
 ---
 
 ## Part C: Use the Runner Script (20 min)
+
+The runner script (`copilot-sdk-runner.ps1` / `.sh`) is a CLI dispatcher that serves as the workshop's single entry point for running Copilot SDK agents from the command line.
+
+**What it does:**
+
+- **Dispatches agents** — Maps `-Usecase` and `-Lang` parameters to the correct TypeScript agent file (`code-review` → `code-review-agent.ts`, `security-analysis` → `security-analysis-agent.ts`) and executes it.
+- **Auto-installs dependencies** — Runs `npm install` automatically if `node_modules` doesn't exist in the SDK directory.
+- **Self-service diagnostics (`-Diagnose`)** — Checks that all prerequisites (`node`, `npm`, `npx`, `tsx`, `git`, `GITHUB_TOKEN`) are present and reports pass/fail.
+- **Discovery (`-List`)** — Lists available use cases so users don't have to dig through the repo structure.
+
+**Why it helps:** Instead of navigating to the right directory, remembering the agent filename, and running `npx tsx <file>` manually, users run a single command. It validates inputs (unknown use case, missing parameters, unsupported language, missing agent file, missing token) and gives clear error messages with guidance.
 
 ### Step 10: Review the Runner Script
 

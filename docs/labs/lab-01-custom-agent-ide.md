@@ -41,7 +41,11 @@ In VS Code use Copilot Chat to generate the instructions file:
 
 1. Open the Copilot Chat panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
    > **TIP:** If the shortcut doesn't work, use the menu: **View → Chat**
-2. In the chat input box, type `/create-instructions named review-standards.instructions.md ` and press Enter
+2. In the chat input box, type the following prompt and press Enter:
+
+```
+/create-instructions named review-standards.instructions.md with applyTo '**/*.js' for a Node.js Express project using CommonJS and better-sqlite3. Include: 3-tier review priorities (CRITICAL/IMPORTANT/SUGGESTION), general review principles, code quality standards with good/bad examples, OWASP security checks, testing standards, performance considerations, architecture principles, documentation standards, a comment format template with severity-tagged examples, and a review checklist covering quality, security, testing, performance, architecture, and documentation.
+```
 3. Copilot will generate an instructions file under `.github/instructions/`
 4. Verify the file exists at `.github/instructions/review-standards.instructions.md` in the Explorer panel
 
@@ -501,7 +505,12 @@ Use Copilot Chat to generate the code-review agent:
 
 1. Open the Copilot Chat panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
    > **TIP:** If the shortcut doesn't work, use the menu: **View → Chat**
-2. In the chat input box, type `/create-agent named code-review` and press Enter
+2. In the chat input box, type the following prompt and press Enter:
+
+```
+/create-agent named code-review with tools read, edit, search. It is an expert code reviewer and application security engineer that performs two analyses: (1) Code Quality Review — naming conventions, DRY violations, magic numbers, error handling, callback hell; (2) Security Review — OWASP Top 10, hardcoded credentials, injection flaws (SQL, command, XSS), weak crypto, verbose error messages. Output findings as a summary table then detailed list sorted by severity (CRITICAL/HIGH/MEDIUM/LOW/SUGGESTION) with category, file:line, description, and code fix.
+```
+
 3. Copilot will generate an agent file under `.github/agents/`
 4. Verify the file exists at `.github/agents/code-review.agent.md` in the Explorer panel
 5. Open the generated file and review the content
@@ -558,7 +567,12 @@ Start with a summary table, then list detailed findings sorted by severity.
 Use Copilot Chat to generate the security-analysis agent:
 
 1. Open the Copilot Chat panel (`Ctrl+Shift+I` / `Cmd+Shift+I`)
-2. In the chat input box, type `/create-agent named security-analysis` and press Enter
+2. In the chat input box, type the following prompt and press Enter:
+
+```
+/create-agent named security-analysis with tools read, search. It is a senior application security engineer specializing in vulnerability assessment. Focus areas: OWASP Top 10 — Injection (A03:2021: SQL, command, NoSQL, XSS), Broken Authentication (A07:2021: hardcoded creds, weak hashing, missing rate limiting), Sensitive Data Exposure (A02:2021: secrets in logs, verbose errors, PII in plaintext), Security Misconfiguration (A05:2021: default creds, missing headers), Insecure Dependencies (A06:2021). Include a severity table (CRITICAL/HIGH/MEDIUM/LOW/INFO) with criteria and examples. Output: executive summary table then detailed findings with CWE identifiers, file:line, proof of concept, and before/after remediation code.
+```
+
 3. Copilot will generate an agent file under `.github/agents/`
 4. Verify the file exists at `.github/agents/security-analysis.agent.md` in the Explorer panel
 5. Open the generated file and review the content
@@ -944,21 +958,31 @@ Now you'll create your first hook using the Copilot coding agent. This hook will
 **2. Paste the following prompt** into the Copilot Chat input and press Enter:
 
 ```
-Create a Copilot hook script at .github/hooks/scripts/secret-scanner.sh that:
+Create a postToolUse secret-scanner hook — both Bash (.sh) and PowerShell (.ps1)
+versions — plus update hooks.json. Use .github/hooks/scripts/log-context.sh as
+the reference pattern for structure, stdin handling, and logging conventions.
 
-1. Runs after each tool use (postToolUse event)
-2. Reads JSON context from stdin (same pattern as log-context.sh)
-3. Scans all .js files in sample-app/ for hardcoded secrets using grep regex patterns:
-   - API keys matching patterns like "sk-", "sk_", "AKIA", "ghp_", "gho_", "github_pat_"
-   - Variables named password, secret, api_key, token assigned to string literals
-   - Bearer tokens in strings
-4. Creates the logs/copilot/ directory if it doesn't exist
-5. Logs findings to logs/copilot/secret-scan.log as JSON with timestamp and finding count
-6. Prints a summary to stdout: "🔍 Secret scan: X potential secret(s) found in sample-app/"
-7. Always exits 0 (warn only — does NOT block the workflow)
+Scripts to create:
+  • .github/hooks/scripts/secret-scanner.sh  (Bash, uses grep)
+  • .github/hooks/scripts/secret-scanner.ps1 (PowerShell, uses Select-String)
 
-Also update .github/hooks/hooks.json to add this script under the postToolUse event
-with a 15-second timeout. Keep the existing sessionStart hook unchanged.
+Both scripts must:
+1. Read JSON context from stdin (Bash: INPUT=$(cat) | PS: [Console]::In.ReadToEnd())
+2. Scan only sample-app/**/*.js for hardcoded secrets using these regex patterns:
+   - API key prefixes: sk-, sk_, AKIA, ghp_, gho_, github_pat_
+   - Assignments like: password|secret|api_key|token\s*=\s*['"]
+   - Bearer tokens: Bearer\s+[A-Za-z0-9\-._~+/]+=*
+3. Create logs/copilot/ directory if missing
+4. Append a JSON log entry to logs/copilot/secret-scan.log with timestamp
+   and finding count
+5. Print to stdout: "🔍 Secret scan: X potential secret(s) found in sample-app/"
+6. Always exit 0 (warn only — never block the workflow)
+
+Update .github/hooks/hooks.json:
+  • Add a postToolUse entry with both bash and powershell fields
+    (same dual-field pattern as the existing sessionStart entry)
+  • Set timeoutSec: 15
+  • Keep the existing sessionStart hook unchanged
 ```
 
 **3. Review what the coding agent generated:**
@@ -967,20 +991,27 @@ After the agent finishes, check these things:
 
 | What to check | Where | What to look for |
 |---------------|-------|-----------------|
-| Script created | `.github/hooks/scripts/secret-scanner.sh` | File exists in Explorer panel |
-| Shebang line | Line 1 of the script | Starts with `#!/bin/bash` |
-| Stdin consumed | Near the top of the script | Has `INPUT=$(cat)` or similar |
-| Correct scan target | In the grep commands | Scans `sample-app/`, not the project root |
-| Exit code | End of the script | Ends with `exit 0` |
-| hooks.json updated | `.github/hooks/hooks.json` | Has a new `postToolUse` entry pointing to the script |
+| Bash script created | `.github/hooks/scripts/secret-scanner.sh` | File exists in Explorer panel |
+| PowerShell script created | `.github/hooks/scripts/secret-scanner.ps1` | File exists in Explorer panel |
+| Shebang line (Bash) | Line 1 of `secret-scanner.sh` | Starts with `#!/bin/bash` |
+| Stdin consumed (Bash) | Near the top of `secret-scanner.sh` | Has `INPUT=$(cat)` or similar |
+| Stdin consumed (PS) | Near the top of `secret-scanner.ps1` | Has `[Console]::In.ReadToEnd()` or similar |
+| Correct scan target | In the grep / Select-String commands | Scans `sample-app/`, not the project root |
+| Exit code (Bash) | End of `secret-scanner.sh` | Ends with `exit 0` |
+| Exit code (PS) | End of `secret-scanner.ps1` | Ends with `exit 0` |
+| hooks.json updated | `.github/hooks/hooks.json` | Has a `postToolUse` entry with both `bash` and `powershell` fields |
 
 > **Common issues the coding agent might produce (and how to fix):**
-> - **Missing shebang (`#!/bin/bash`)** — Add it as the first line of the script
-> - **Not reading stdin** — Add `INPUT=$(cat)` near the top (hooks always receive JSON via stdin; not reading it can cause the script to hang)
-> - **Scanning the wrong directory** — Ensure grep targets `sample-app/`, not `.` or the project root
-> - **Forgot to update hooks.json** — Manually add the `postToolUse` entry (see Step 14 for the expected format)
+> - **Missing shebang (`#!/bin/bash`)** — Add it as the first line of the `.sh` script
+> - **Not reading stdin** — Add `INPUT=$(cat)` in the Bash script or `[Console]::In.ReadToEnd()` in the PowerShell script (hooks always receive JSON via stdin; not reading it can cause the script to hang)
+> - **Scanning the wrong directory** — Ensure grep / Select-String targets `sample-app/`, not `.` or the project root
+> - **Forgot to update hooks.json** — Manually add the `postToolUse` entry with both `bash` and `powershell` fields (see Step 14 for the expected format)
+> - **Missing `powershell` field in hooks.json** — Ensure the `postToolUse` entry has both `bash` and `powershell` fields, following the same pattern as `sessionStart`
+> - **Only created one script** — Iterate the prompt and ask the agent to create the missing `.sh` or `.ps1` script
 
 **4. Make the script executable and test it:**
+
+**macOS / Linux / Git Bash:**
 
 ```bash
 # Make executable
@@ -988,6 +1019,13 @@ chmod +x .github/hooks/scripts/secret-scanner.sh
 
 # Test manually
 echo '{}' | .github/hooks/scripts/secret-scanner.sh
+```
+
+**Windows PowerShell:**
+
+```powershell
+# Test manually
+echo '{}' | powershell -ExecutionPolicy Bypass -File .github/hooks/scripts/secret-scanner.ps1
 ```
 
 **Expected output** (because `sample-app/server.js` contains `sk-proj-abc123...` and `SuperSecret123!`):
@@ -1015,7 +1053,8 @@ This hook runs your test suite when the agent finishes and **blocks the workflow
 **1. In the same Agent mode Copilot Chat**, paste this prompt:
 
 ```
-Create a Copilot hook script at .github/hooks/scripts/test-gate.sh that:
+Create two Copilot hook scripts — .github/hooks/scripts/test-gate.sh (Bash) and
+.github/hooks/scripts/test-gate.ps1 (PowerShell) — with identical behavior:
 
 1. Runs when the agent stops (agentStop event)
 2. Reads JSON context from stdin
@@ -1033,26 +1072,35 @@ Create a Copilot hook script at .github/hooks/scripts/test-gate.sh that:
      before proceeding."
    - Exits 1 to BLOCK the workflow
 
-Also update .github/hooks/hooks.json to add this script under the agentStop event
-with a 30-second timeout. Keep the existing sessionStart and postToolUse hooks unchanged.
+The .ps1 script should use PowerShell idioms (e.g., Set-Location, New-Item,
+ConvertTo-Json, $LASTEXITCODE) while producing the same log format and exit
+behavior as the .sh script.
+
+Also update .github/hooks/hooks.json to add both scripts under the agentStop event
+with a 30-second timeout, using the "bash" key for the .sh script and the
+"powershell" key for the .ps1 script (matching the pattern used by the other hooks).
+Keep the existing sessionStart and postToolUse hooks unchanged.
 ```
 
 **2. Review what the coding agent generated:**
 
 | What to check | Where | What to look for |
 |---------------|-------|-----------------|
-| Script created | `.github/hooks/scripts/test-gate.sh` | File exists in Explorer panel |
-| Correct directory | In the script body | Does `cd sample-app` before `npm test` |
-| Exit code handling | End of script | Exits `0` on test pass, exits `1` on test fail |
-| hooks.json updated | `.github/hooks/hooks.json` | Has a new `agentStop` entry with 30s timeout |
+| Bash script created | `.github/hooks/scripts/test-gate.sh` | File exists in Explorer panel |
+| PowerShell script created | `.github/hooks/scripts/test-gate.ps1` | File exists in Explorer panel |
+| Correct directory | In both script bodies | `.sh` does `cd sample-app`; `.ps1` does `Set-Location sample-app` before `npm test` |
+| Exit code handling | End of both scripts | Exits `0` on test pass, exits `1` on test fail |
+| hooks.json updated | `.github/hooks/hooks.json` | `agentStop` entry has both `bash` and `powershell` keys with 30s timeout |
 
 > **Common issues and fixes:**
 > - **`npm test` fails with "missing dependencies"** — The script should not need to run `npm install` (that's done during setup). But if you haven't run `npm install` in `sample-app/` yet, do it now: `cd sample-app && npm install && cd ..`
 > - **Script doesn't change directory** — Ensure the script does `cd sample-app` before `npm test`. Without this, npm will look for `package.json` in the project root
 > - **Uses `set -e` and npm test failure kills the script** — The script should capture the exit code (`npm test; TEST_EXIT=$?`) rather than letting `set -e` abort on failure
+> - **PowerShell script doesn't check `$LASTEXITCODE`** — The `.ps1` script should capture `$LASTEXITCODE` after `npm test` rather than relying on `$?` alone
 
-**3. Make the script executable and test it:**
+**3. Make the scripts executable and test:**
 
+**On macOS / Linux (Bash):**
 ```bash
 # Make executable
 chmod +x .github/hooks/scripts/test-gate.sh
@@ -1062,6 +1110,15 @@ cd sample-app && npm install && cd ..
 
 # Test manually
 echo '{}' | .github/hooks/scripts/test-gate.sh
+```
+
+**On Windows (PowerShell):**
+```powershell
+# Ensure dependencies are installed
+Push-Location sample-app; npm install; Pop-Location
+
+# Test manually
+'{}' | powershell -ExecutionPolicy Bypass -File .github/hooks/scripts/test-gate.ps1
 ```
 
 **Expected output** (the sample-app tests pass on unmodified code):
@@ -1102,6 +1159,7 @@ Open `.github/hooks/hooks.json` and confirm it has **three events** configured �
       {
         "type": "command",
         "bash": ".github/hooks/scripts/secret-scanner.sh",
+        "powershell": "powershell -ExecutionPolicy Bypass -File .github/hooks/scripts/secret-scanner.ps1",
         "cwd": ".",
         "timeoutSec": 15
       }
@@ -1110,6 +1168,7 @@ Open `.github/hooks/hooks.json` and confirm it has **three events** configured �
       {
         "type": "command",
         "bash": ".github/hooks/scripts/test-gate.sh",
+        "powershell": "powershell -ExecutionPolicy Bypass -File .github/hooks/scripts/test-gate.ps1",
         "cwd": ".",
         "timeoutSec": 30
       }
@@ -1159,7 +1218,8 @@ When you invoke `@code-review` in Part E, the hooks fire automatically at each l
 |-------|----------|
 | `hooks.json` has 3 events | `sessionStart`, `postToolUse`, `agentStop` all configured |
 | `log-context.sh` tested | `echo '{"event":"test"}' \| .github/hooks/scripts/log-context.sh` logs to `session.log` |
-| `secret-scanner.sh` created by coding agent | Script exists, is executable, detects secrets in `server.js` |
+| `secret-scanner.sh` created by coding agent | Bash script exists, is executable, detects secrets in `server.js` |
+| `secret-scanner.ps1` created by coding agent | PowerShell script exists, detects secrets in `server.js` |
 | `test-gate.sh` created by coding agent *(stretch)* | Script exists, is executable, runs `npm test` successfully |
 | All scripts executable | `chmod +x` applied to all scripts (macOS/Linux) |
 
@@ -1233,7 +1293,8 @@ Expected findings:
 | Skills not recognized | Ensure the SKILL.md file has valid YAML frontmatter with `name` and `description` (Part C is optional). Try reloading VS Code |
 | Coding agent creates a script that doesn't work | Check: (1) shebang line `#!/bin/bash` on line 1, (2) stdin is consumed with `INPUT=$(cat)`, (3) correct directory paths. See Common Issues callouts in Steps 12–13 |
 | `npm test` fails inside `test-gate.sh` | Ensure the script does `cd sample-app` before `npm test`. Run `cd sample-app && npm install && cd ..` if dependencies aren't installed |
-| Secret scanner finds nothing | Check that grep patterns target `sample-app/`, not the project root. Verify `server.js` still has the original hardcoded secrets |
+| Secret scanner finds nothing | Check that grep / Select-String patterns target `sample-app/`, not the project root. Verify `server.js` still has the original hardcoded secrets |
+| PowerShell script not found | Ensure `.github/hooks/scripts/secret-scanner.ps1` was created. If the coding agent only generated the `.sh` script, iterate the prompt asking it to also create the `.ps1` version |
 | `hooks.json` malformed after coding agent edit | Validate JSON: `cat .github/hooks/hooks.json \| python3 -m json.tool`. Fix manually using the reference in Step 14 |
 | `/create-agent` or `/create-skills` command not recognized | Ensure GitHub Copilot Chat extension is up to date. Try updating via Extensions panel |
 

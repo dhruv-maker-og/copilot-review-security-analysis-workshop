@@ -249,10 +249,6 @@ You should see a list that includes:
 |-------|--------|-------------|
 | `code-review` | Lab 1 (`.github/agents/`) | Your custom code reviewer with structured output |
 | `security-analysis` | Lab 1 (`.github/agents/`) | Your custom OWASP security scanner with CWE references |
-| `explore` | Built-in | Fast codebase analysis without adding to main context |
-| `task` | Built-in | Executes commands (tests, builds) with brief summaries |
-| `general-purpose` | Built-in | Complex multi-step tasks with full toolset |
-| `research` | Built-in | Deep research across codebase and web |
 
 > **NOTE:** Your custom agents from Lab 1 appear because Copilot CLI auto-discovers agent files in `.github/agents/`. The custom `code-review` agent takes **precedence** over the built-in one at the repository level.
 
@@ -289,6 +285,8 @@ This runs the agent in single-prompt mode and exits after completion — useful 
 ---
 
 ### Step 5: `/fleet` — Parallel Subagent Execution
+
+> **NOTE:** Before invoking `/fleet` mode, switch back to the default agent mode by typing `/agent` and selecting the **default** option from the dropdown.
 
 The `/fleet` command splits a task across **multiple subagents that work simultaneously**. Instead of reviewing files one at a time, you can analyze the entire sample app in parallel.
 
@@ -384,11 +382,38 @@ You can prefix any prompt with `&` to delegate it:
 
 ## Part B: GitHub Actions Workflows (25 min)
 
+Before enabling Github Actions Workflows you need to create a Personal Access Token (PAT)
+
+### Step 1: Create a Personal Access Token (PAT) with Copilot Scope
+
+1. Go to **GitHub.com** → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens** (or classic tokens)
+2. Click **"Generate new token"**
+3. Give it a name like `COPILOT_API_TOKEN`
+4. Under **Permissions**, enable:
+   - **Contents** → Read and write
+   - **Metadata** → Read-only (auto-selected)
+5. Click **"Generate token"** and copy the token value
+
+---
+
+### Step 2: Add the Token as a Repository Secret
+
+1. Go to your repo: `dhruv-maker-og/SM_copilot-review-security-analysis-workshop`
+2. Navigate to **Settings** → **Secrets and variables** → **Actions**
+3. Click **"New repository secret"**
+4. **Name:** `COPILOT_TOKEN`
+5. **Value:** (paste the PAT from Step 1)
+6. Click **"Add secret"**
+
+---
+
 The workshop repository uses a **reusable workflow** architecture. The Copilot CLI engine lives in `.github/workflows/copilot-cli-action.yml`, while the caller workflow templates live in `.github/actions/`. To activate them, copy the caller workflows into `.github/workflows/`.
+
 
 #### Copy the caller workflows into `.github/workflows/`
 
 ```bash
+cp .github/actions/copilot-cli-action.yml .github/workflows/copilot-cli-action.yml
 cp .github/actions/code-review.yml .github/workflows/code-review.yml
 cp .github/actions/security-analysis.yml .github/workflows/security-analysis.yml
 ```
@@ -396,6 +421,7 @@ cp .github/actions/security-analysis.yml .github/workflows/security-analysis.yml
 Or on Windows (PowerShell):
 
 ```powershell
+Copy-Item .github\actions\copilot-cli-action.yml .github\actions\copilot-cli-action.yml
 Copy-Item .github\actions\code-review.yml .github\workflows\code-review.yml
 Copy-Item .github\actions\security-analysis.yml .github\workflows\security-analysis.yml
 ```
@@ -440,35 +466,35 @@ git remote add origin https://github.com/<your-username>/copilot-review-security
 git push -u origin main
 ```
 
-### Step 7: Create a Test Branch and PR
+### Step 7: Create a Test Branch and PR from GitHub
 
-Create a branch with a small change to trigger the workflows:
+Create a branch and pull request directly from the GitHub web portal:
 
-```bash
-git checkout -b feature/test-review
-```
+1. Go to your repository on **GitHub.com** (e.g., `https://github.com/<your-username>/copilot-review-security-workshop`)
 
-Edit `sample-app/server.js` — add a comment at the top:
+2. **Create a new branch:**
+   - Click the branch selector dropdown (shows **main**)
+   - Type `feature/test-review` in the search/create field
+   - Click **"Create branch: feature/test-review from main"**
 
-```javascript
-// This file needs a comprehensive code review and security analysis
-```
+3. **Edit a file on the new branch:**
+   - Navigate to `sample-app/server.js`
+   - Click the **pencil icon** (Edit this file) in the top-right corner of the file view
+   - Add the following comment at the very top of the file:
+     ```javascript
+     // This file needs a comprehensive code review and security analysis
+     ```
+   - Scroll down to **"Commit changes"**
+   - Enter the commit message: `test: trigger code review and security analysis workflows`
+   - Ensure **"Commit directly to the `feature/test-review` branch"** is selected
+   - Click **"Commit changes"**
 
-Commit and push:
-
-```bash
-git add sample-app/server.js
-git commit -m "test: trigger code review and security analysis workflows"
-git push -u origin feature/test-review
-```
-
-Create a pull request:
-
-```bash
-gh pr create --title "Test: Code Review & Security Analysis" \
-  --body "This PR triggers the automated code review and security analysis workflows." \
-  --base main
-```
+4. **Create a pull request:**
+   - After committing, GitHub will show a banner: **"feature/test-review had recent pushes — Compare & pull request"**. Click that button
+   - If you don't see the banner, go to the **Pull requests** tab and click **"New pull request"**, then set **base:** `main` and **compare:** `feature/test-review`
+   - Set the title: `Test: Code Review & Security Analysis`
+   - Set the description: `This PR triggers the automated code review and security analysis workflows.`
+   - Click **"Create pull request"**
 
 ### Step 8: Monitor Workflow Execution
 
