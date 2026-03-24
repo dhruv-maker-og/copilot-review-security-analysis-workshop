@@ -1,11 +1,12 @@
 {
   "name": "copilot-sdk-agents",
   "version": "1.0.0",
-  "description": "Code Review and Security Analysis agents using the GitHub Copilot SDK",
+  "description": "Code Review, Security Analysis, and Multi-Agent Orchestration agents using the GitHub Copilot SDK",
   "type": "module",
   "scripts": {
     "code-review": "tsx code-review-agent.ts",
-    "security-analysis": "tsx security-analysis-agent.ts"
+    "security-analysis": "tsx security-analysis-agent.ts",
+    "multi-agent": "tsx multi-agent-orchestrator.ts"
   },
   "dependencies": {
     "@github/copilot-sdk": "^0.1.20"

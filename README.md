@@ -24,9 +24,10 @@ This hands-on workshop teaches you to create, configure, and run AI-powered code
 | **Exercise 2** | [Invocation from IDE & CLI](docs/labs/lab-02-invocation-ide-cli.md) | 60 min | Invoke agents from IDE, CLI, and GitHub Actions |
 | **Exercise 3** | [SDK Automation](docs/labs/lab-03-sdk-automation.md) | 60 min | Automate code review and security analysis via Copilot SDK |
 | **Exercise 4** | [Code Review on GitHub.com](docs/labs/lab-04-code-review-github-platform.md) | 30 min | Request Copilot as a PR reviewer on GitHub.com |
+| **Exercise 5** | [Multi-Agent Orchestration](docs/labs/lab-05-multi-agent-orchestration.md) | 75 min | Coordinate sub-agents in parallel via Copilot SDK orchestrator |
 | **Wrap-up** | [Workshop Overview](docs/workshop-overview.md) | 30 min | Review outcomes, next steps, and Q&A |
 
-**Total estimated time: ~5.5 hours** (adjust pace for your audience)
+**Total estimated time: ~7 hours** (adjust pace for your audience)
 
 ---
 
@@ -54,6 +55,7 @@ By the end of this workshop, you will be able to:
 3. **Run code review and security review** from the IDE and Copilot CLI using reusable workflows
 4. **Automate both code review and security analysis** via Copilot SDK (Node.js) and run it via scripts
 5. **Request Copilot code review on GitHub.com** directly from a pull request, using custom review instructions
+6. **Orchestrate multiple agents in parallel** using the supervisor pattern with `Promise.all` and finding deduplication
 
 ---
 
@@ -85,7 +87,9 @@ By the end of this workshop, you will be able to:
 │   └── labs/
 │       ├── lab-01-custom-agent-ide.md      # Exercise 1: Custom agent, skills, hooks
 │       ├── lab-02-invocation-ide-cli.md    # Exercise 2: IDE + CLI invocation + workflows
-│       └── lab-03-sdk-automation.md        # Exercise 3: Copilot SDK automation (Node.js)
+│       ├── lab-03-sdk-automation.md        # Exercise 3: Copilot SDK automation (Node.js)
+│       ├── lab-04-code-review-github-platform.md  # Exercise 4: PR review on GitHub.com
+│       └── lab-05-multi-agent-orchestration.md    # Exercise 5: Multi-agent orchestration
 │
 ├── sample-app/                        # Node.js app with intentional vulnerabilities
 │   ├── package.json
@@ -99,15 +103,18 @@ By the end of this workshop, you will be able to:
 │   │   └── sample-pr-description.md   # Example PR description and diff
 │   └── findings/
 │       ├── code-review-example-output.md       # Expected code review output
-│       └── security-analysis-example-output.md # Expected security analysis output
+│       ├── security-analysis-example-output.md # Expected security analysis output
+│       └── multi-agent-report-example.md       # Expected multi-agent orchestration output
 │
 ├── templates/                         # Reference templates (NOT consumed by Copilot directly)
 │   ├── instructions/
 │   │   ├── code-review.md             # Template: code review instruction criteria
 │   │   └── security-review.md         # Template: security review instruction criteria
-│   └── skills/
-│       ├── skill-code-review.md       # Template: code review skill definition
-│       └── skill-security-analysis.md # Template: security analysis skill definition
+│   ├── skills/
+│   │   ├── skill-code-review.md       # Template: code review skill definition
+│   │   └── skill-security-analysis.md # Template: security analysis skill definition
+│   └── sdk/
+│       └── multi-agent-orchestrator.skeleton.ts  # Lab 5 skeleton (participants fill in TODOs)
 │
 ├── automation/
 │   ├── copilot-sdk-runner.sh          # Bash runner: --usecase <name> --lang <lang>
@@ -120,6 +127,7 @@ By the end of this workshop, you will be able to:
         ├── tsconfig.json              # TypeScript config
         ├── code-review-agent.ts       # SDK agent: code review
         ├── security-analysis-agent.ts # SDK agent: security analysis
+        ├── multi-agent-orchestrator.ts # SDK agent: multi-agent orchestrator (Lab 5)
         └── README.md                  # SDK project README
 ```
 
@@ -140,7 +148,7 @@ cp .env.example .env
 cd sample-app && npm install && cd ..
 
 # 4. Install the SDK dependencies
-cd sdk/nodejs && npm install && cd ../..
+cd sdk/nodejs && npm install && cd ../.
 
 # 5. Follow the setup guides in docs/setup/ then start with Lab 1
 ```

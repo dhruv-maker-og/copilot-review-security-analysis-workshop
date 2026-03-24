@@ -7,6 +7,7 @@
 # Usage:
 #   ./copilot-sdk-runner.sh --usecase code-review --lang nodejs
 #   ./copilot-sdk-runner.sh --usecase security-analysis --lang nodejs
+#   ./copilot-sdk-runner.sh --usecase multi-agent --lang nodejs
 #   ./copilot-sdk-runner.sh --list
 #   ./copilot-sdk-runner.sh --diagnose
 # ============================================================================
@@ -36,7 +37,7 @@ Usage:
   $(basename "$0") --help
 
 Options:
-  --usecase <name>   Use case to run (code-review, security-analysis)
+  --usecase <name>   Use case to run (code-review, security-analysis, multi-agent)
   --lang <lang>      Language runtime (nodejs)
   --list             List available use cases
   --diagnose         Check prerequisites
@@ -49,11 +50,12 @@ list_usecases() {
 Available use cases:
   code-review         Code Review Agent — analyzes code quality and style
   security-analysis   Security Analysis Agent — scans for OWASP Top 10 vulnerabilities
+  multi-agent         Multi-Agent Orchestrator — parallel code review + security analysis
 
 Supported languages: nodejs
 
 Example:
-  ./automation/copilot-sdk-runner.sh --usecase code-review --lang nodejs
+  ./automation/copilot-sdk-runner.sh --usecase multi-agent --lang nodejs
 EOF
 }
 
@@ -62,10 +64,10 @@ check_cmd() {
   if command -v "$name" &>/dev/null; then
     local version
     version=$("$name" --version 2>/dev/null | head -1)
-    printf "  %-14s ${GREEN}✅${NC} %s\n" "$name:" "$version"
+    printf "  %-14s ${GREEN}\u2705${NC} %s\n" "$name:" "$version"
     return 0
   else
-    printf "  %-14s ${RED}❌ Not found${NC}\n" "$name:"
+    printf "  %-14s ${RED}\u274C Not found${NC}\n" "$name:"
     return 1
   fi
 }
@@ -85,17 +87,17 @@ diagnose() {
   if npx tsx --version &>/dev/null; then
     local tsx_ver
     tsx_ver=$(npx tsx --version 2>/dev/null | head -1)
-    printf "  %-14s ${GREEN}✅${NC} %s\n" "tsx:" "$tsx_ver"
+    printf "  %-14s ${GREEN}\u2705${NC} %s\n" "tsx:" "$tsx_ver"
   else
-    printf "  %-14s ${RED}❌ Not found${NC}\n" "tsx:"
+    printf "  %-14s ${RED}\u274C Not found${NC}\n" "tsx:"
     ok=false
   fi
 
   # GITHUB_TOKEN
   if [ -n "${GITHUB_TOKEN:-}" ]; then
-    printf "  %-14s ${GREEN}✅ Set${NC}\n" "GITHUB_TOKEN:"
+    printf "  %-14s ${GREEN}\u2705 Set${NC}\n" "GITHUB_TOKEN:"
   else
-    printf "  %-14s ${RED}❌ Not set${NC}\n" "GITHUB_TOKEN:"
+    printf "  %-14s ${RED}\u274C Not set${NC}\n" "GITHUB_TOKEN:"
     ok=false
   fi
 
@@ -168,6 +170,9 @@ case "$USECASE" in
     ;;
   security-analysis)
     AGENT_FILE="security-analysis-agent.ts"
+    ;;
+  multi-agent)
+    AGENT_FILE="multi-agent-orchestrator.ts"
     ;;
   *)
     echo -e "${RED}Error: Unknown use case '$USECASE'.${NC}"

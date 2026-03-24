@@ -8,6 +8,7 @@
 .EXAMPLE
     .\copilot-sdk-runner.ps1 -Usecase code-review -Lang nodejs
     .\copilot-sdk-runner.ps1 -Usecase security-analysis -Lang nodejs
+    .\copilot-sdk-runner.ps1 -Usecase multi-agent -Lang nodejs
     .\copilot-sdk-runner.ps1 -List
     .\copilot-sdk-runner.ps1 -Diagnose
 #>
@@ -39,7 +40,7 @@ Usage:
   .\copilot-sdk-runner.ps1 -Help
 
 Parameters:
-  -Usecase <name>   Use case to run (code-review, security-analysis)
+  -Usecase <name>   Use case to run (code-review, security-analysis, multi-agent)
   -Lang <lang>      Language runtime (nodejs)
   -List             List available use cases
   -Diagnose         Check prerequisites
@@ -52,11 +53,12 @@ function Show-Usecases {
 Available use cases:
   code-review         Code Review Agent - analyzes code quality and style
   security-analysis   Security Analysis Agent - scans for OWASP Top 10 vulnerabilities
+  multi-agent         Multi-Agent Orchestrator - parallel code review + security analysis
 
 Supported languages: nodejs
 
 Example:
-  .\automation\copilot-sdk-runner.ps1 -Usecase code-review -Lang nodejs
+  .\automation\copilot-sdk-runner.ps1 -Usecase multi-agent -Lang nodejs
 "@
 }
 
@@ -151,6 +153,7 @@ if ($Lang -ne "nodejs") {
 $AgentFile = switch ($Usecase) {
     "code-review"       { "code-review-agent.ts" }
     "security-analysis" { "security-analysis-agent.ts" }
+    "multi-agent"       { "multi-agent-orchestrator.ts" }
     default {
         Write-Host "Error: Unknown use case '$Usecase'." -ForegroundColor Red
         Write-Host "Run with -List to see available use cases."
